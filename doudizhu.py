@@ -53,10 +53,21 @@ class Hand:
             elif cards[1].rank == cards[2].rank == cards[3].rank:
                 self.type = "triple+1"
                 self.main_rank = cards[1].rank
-        # elif len(cards) == 5:
-        #     if cards[0].rank == cards[1].rank == cards[2].rank or \
-        #             cards[1].rank == cards[2].rank == cards[3].rank:
-        #         return "triple+1"
+        elif len(cards) == 5:
+            if cards[0].rank == cards[1].rank == cards[2].rank and cards[3].rank == cards[4].rank:
+                self.type = "triple+2"
+                self.main_rank = cards[0].rank
+            elif cards[2].rank == cards[3].rank == cards[4].rank and cards[0].rank == cards[1].rank:
+                self.type = "triple+2"
+                self.main_rank = cards[2].rank
+            else:
+                for i in range(1, len(cards)):
+                    if cards[i].rank != cards[i-1].rank + 1:
+                        self.type = "invalid"
+                        return
+                    self.type = "straight"
+                    self.main_rank = cards[0].rank
+
 
     def beats_hand(self, other):
         if other.type == "bomb":
