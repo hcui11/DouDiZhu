@@ -9,7 +9,7 @@ class MonteCarloTreeSearchNode():
         self.children = []
         self._number_of_visits = 0
         self._results = {1: 0, -1: 0} # 1 for win, -1 for loss
-        self._untried_actions = self.state.get_legal_actions()
+        self._untried_actions = self.state.legal_actions()
 
     def q(self):
         wins = self._results[1]
@@ -36,7 +36,7 @@ class MonteCarloTreeSearchNode():
         current_state = self.state
         
         while not current_state.is_game_over():
-            possible_moves = current_state.get_legal_actions()
+            possible_moves = current_state.legal_actions()
             action = possible_moves[np.random.randint(len(possible_moves))]
             current_state = current_state.move(action)
         return current_state.game_result()

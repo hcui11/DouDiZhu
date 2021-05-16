@@ -4,7 +4,7 @@ class Play:
     # types:
     #single, double, triple, bomb, triple+1
     def __init__(self, cards):
-        self.cards = sorted(cards)
+        self.cards = cards
         self.type = None
         self.main_rank = None
         self.get_info(self.cards)
@@ -104,38 +104,71 @@ class Game:
                 singles.append([i])
             if n > 1:
                 doubles.append([i, i])
+                if i == 13:
+                    possible_actions.append([i, i])
             if n > 2:
-                doubles.append([i, i, i])
+                triples.append([i, i, i])
             if n == 4:
                 possible_actions.append([i, i, i, i])
-        # No Last Move or Single Last Move
-        if not self.last_move or self.last_move.type == "single":
+        
+        # No Last Move
+        if not self.last_move:
             possible_actions.extend(singles)
-        # No Last Move or Double Last Move
-        if not self.last_move or self.last_move.type == "double":
             possible_actions.extend(doubles)
-        # No Last Move or Triple Last Move
-        if not self.last_move or self.last_move.type == "double":
             possible_actions.extend(triples)
-        # No Last Move or Triple+1 Last Move
-        if not self.last_move or self.last_move.type == "triple+1":
             for triple in triples:
                 for single in singles:
-                    possible_actions.append(triple + single)
-        # No Last Move or Triple+2 Last Move
-        if not self.last_move or self.last_move.type == "triple+2":
-            for triple in triples:
+                    if triple[0] != single[0]:
+                        possible_actions.append(triple + single)
                 for double in doubles:
-                    possible_actions.append(triple + double)
-        # No Last Move or Straight Last Move
-        if not self.lat_move or self.last_move.type == "straight":
+                    if triple[0] != double[0]:
+                        possible_actions.append(triple + double)
             straight = []
             for single in singles:
-                if len(straight) == 0 or single == straight[-1]:
-                    straight.append(single)
+                if len(straight) == 0 or single[0] == straight[-1] + 1:
+                    straight.append(single[0])
                 else:
-                    straight = []
+                    straight = [single[0]]
                 if len(straight) > 4:
+                    possible_actions.append(straight[:])
+        # No Last Move or Single Last Move
+        elif self.last_move.type == "single":
+            for single in singles:
+                if single[0] > self.last_move.cards[0]:
+                    possible_actions.append(single)
+        # No Last Move or Double Last Move
+        elif self.last_move.type == "double":
+            for double in doubles:
+                if double[0] > self.last_move.cards[0]:
+                    possible_actions.append(double)
+        # No Last Move or Triple Last Move
+        elif self.last_move.type == "triple":
+            for triple in triples:
+                if triple[0] > self.last_move.cards[0]:
+                    possible_actions.append(triple)
+        # No Last Move or Triple+1 Last Move
+        elif self.last_move.type == "triple+1":
+            for triple in triples:
+                if triple[0] > self.last_move.cards[0]:
+                    for single in singles:
+                        if triple[0] != single[0]:
+                            possible_actions.append(triple + single)
+        # No Last Move or Triple+2 Last Move
+        elif self.last_move.type == "triple+2":
+            for triple in triples:
+                if triple[0] > self.last_move.cards[0]:
+                    for double in doubles:
+                        if triple[0] != double[0]:
+                            possible_actions.append(triple + double)
+        # No Last Move or Straight Last Move
+        elif self.last_move.type == "straight":
+            straight = []
+            for single in singles:
+                if len(straight) == 0 or single[0] == straight[-1] + 1:
+                    straight.append(single[0])
+                else:
+                    straight = [single[0]]
+                if len(straight) > 4 and straight[0] > self.last_move.cards[0]:
                     possible_actions.append(straight[:])
 
         return possible_actions
@@ -174,6 +207,10 @@ def main():
             print("The play to beat: ", game.last_move.cards)
         else:
             print("There is no play to beat")
+
+        print("Legal Actions:")
+        for action in game.legal_actions():
+            print(action)
         
         while (True):
             move = input(
