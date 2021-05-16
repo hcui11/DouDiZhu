@@ -2,6 +2,7 @@ import numpy as np
 from doudizhu import Game, Play
 from mcts import MonteCarloTreeSearchNode
 
+
 def main():
     game = Game()
     state = Game(hands=game.hands+0)
@@ -26,7 +27,7 @@ def main():
         possible_moves = game.legal_actions()
         for i, action in enumerate(possible_moves[:-1]):
             print(f'{i}: {action}')
-        
+
         while (True):
             if game.turn == 0:
                 landlordAI = landlordAI.best_action()
@@ -46,17 +47,25 @@ def main():
                 else:
                     print('Invalid Move!')
                     continue
-                
-                landlordAI = landlordAI.children[move]
-                landlordAI.parent = None
+
                 move = possible_moves[move]
                 play = Play(move)
                 print(f"You played a {play.type}!")
                 input("Press anything to continue")
                 game.move(play)
+                try:
+                    landlordAI = landlordAI.children[move]
+                    landlordAI.parent = None
+                except:
+                    state = Game(hands=game.hands+0,
+                                 last_move=game.last_move,
+                                 turn=game.turn,
+                                 passes=game.passes)
+                    landlordAI = MonteCarloTreeSearchNode(state, 0)
                 break
         print("\n\n")
     print(f"Player {game.over()} wins!")
+
 
 if __name__ == '__main__':
     main()

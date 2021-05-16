@@ -39,16 +39,10 @@ class Play:
             elif cards[0] == cards[1] == cards[2]:
                 self.type = "triple+1"
                 self.main_rank = cards[0]
-            elif cards[1] == cards[2] == cards[3]:
-                self.type = "triple+1"
-                self.main_rank = cards[1]
         elif len(cards) == 5:
             if cards[0] == cards[1] == cards[2] and cards[3] == cards[4]:
                 self.type = "triple+2"
                 self.main_rank = cards[0]
-            elif cards[2] == cards[3] == cards[4] and cards[0] == cards[1]:
-                self.type = "triple+2"
-                self.main_rank = cards[2]
             else:
                 for i in range(1, len(cards)):
                     if cards[i] != cards[i-1] + 1:
