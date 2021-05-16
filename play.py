@@ -4,6 +4,9 @@ from mcts import MonteCarloTreeSearchNode
 
 def main():
     game = Game()
+    state = Game(hands=game.hands+0)
+    landlordAI = MonteCarloTreeSearchNode(state, 0)
+
     while game.over() == -1:
         print(f"PLAYER {game.turn}'s CARDS:")
         print(game.hands[game.turn])
@@ -25,16 +28,28 @@ def main():
             print(f'{i}: {action}')
         
         while (True):
-            move = input(
-                "Please enter your indexed move or enter PASS: ")
-            if move == "PASS" or move == "P":
-                move = possible_moves[-1]
-                play = Play(move)
-                game.move(play)
+            if game.turn == 0:
+                landlordAI = landlordAI.best_action()
+                landlordAI.parent = None
+                print(f"Landlord played a {landlordAI.parent_action.type}!")
+                input("Press anything to continue")
+                game.move(landlordAI.parent_action)
                 break
-            
-            if move.isnumeric() and int(move) < len(possible_moves):
-                move = possible_moves[int(move)]
+            else:
+                move = input(
+                    "Please enter your indexed move or enter PASS: ")
+
+                if move == "PASS" or move == "P":
+                    move = -1
+                elif move.isnumeric() and int(move) < len(possible_moves):
+                    move = int(move)
+                else:
+                    print('Invalid Move!')
+                    continue
+                
+                landlordAI = landlordAI.children[move]
+                landlordAI.parent = None
+                move = possible_moves[move]
                 play = Play(move)
                 print(f"You played a {play.type}!")
                 input("Press anything to continue")

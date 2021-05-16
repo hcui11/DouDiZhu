@@ -26,6 +26,7 @@ class MonteCarloTreeSearchNode():
         state_params = self.state.simulate(Play(action))
         next_state = Game(*state_params)
         child_node = MonteCarloTreeSearchNode(next_state,
+                                              self.player,
                                               parent=self,
                                               parent_action=Play(action))
 
@@ -70,7 +71,7 @@ class MonteCarloTreeSearchNode():
         return current_node
 
     def best_action(self):
-        simulation_no = 100
+        simulation_no = 1000
         for i in range(simulation_no):
             v = self.select()
             reward = v.simulate()

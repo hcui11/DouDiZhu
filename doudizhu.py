@@ -80,7 +80,7 @@ class Game:
         self.last_move = last_move
         self.turn = turn
         self.passes = passes
-        if not hands:
+        if hands is None:
             self.hands = np.zeros((3, 14))
             self.distribute_cards()
 
