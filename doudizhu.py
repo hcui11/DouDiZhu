@@ -186,6 +186,13 @@ class Game:
         for card in play.cards:
             self.hands[self.turn, card] -= 1
 
+    def simulate(self, play):
+        hands = self.hands + 0
+        for card in play.cards:
+            hands[self.turn, card] -= 1
+        turn = (self.turn + 1) % 3
+        return hands, play, turn
+
 
 def main():
     game = Game()
