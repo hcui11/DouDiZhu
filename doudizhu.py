@@ -125,12 +125,13 @@ class Game:
                         possible_actions.append(triple + double)
             straight = []
             for single in singles:
-                if len(straight) == 0 or single[0] == straight[-1] + 1:
-                    straight.append(single[0])
-                else:
-                    straight = [single[0]]
-                if len(straight) > 4:
-                    possible_actions.append(straight[:])
+                if single != 12 and single != 13:
+                    if len(straight) == 0 or single[0] == straight[-1] + 1:
+                        straight.append(single[0])
+                    else:
+                        straight = [single[0]]
+                    if len(straight) > 4:
+                        possible_actions.append(straight[:])
         # No Last Move or Single Last Move
         elif self.last_move.type == "single":
             for single in singles:
@@ -164,12 +165,13 @@ class Game:
         elif self.last_move.type == "straight":
             straight = []
             for single in singles:
-                if len(straight) == 0 or single[0] == straight[-1] + 1:
-                    straight.append(single[0])
-                else:
-                    straight = [single[0]]
-                if len(straight) > 4 and straight[0] > self.last_move.cards[0]:
-                    possible_actions.append(straight[:])
+                if single != 12 and single != 13:
+                    if len(straight) == 0 or single[0] == straight[-1] + 1:
+                        straight.append(single[0])
+                    else:
+                        straight = [single[0]]
+                    if len(straight) > 4 and straight[0] > self.last_move.cards[0]:
+                        possible_actions.append(straight[:])
 
         possible_actions.append([-1])
         return possible_actions
