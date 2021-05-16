@@ -125,7 +125,7 @@ class Game:
                         possible_actions.append(triple + double)
             straight = []
             for single in singles:
-                if single != 12 and single != 13:
+                if single[0] != 12 and single[0] != 13:
                     if len(straight) == 0 or single[0] == straight[-1] + 1:
                         straight.append(single[0])
                     else:
@@ -165,7 +165,7 @@ class Game:
         elif self.last_move.type == "straight":
             straight = []
             for single in singles:
-                if single != 12 and single != 13:
+                if single[0] != 12 and single[0] != 13:
                     if len(straight) == 0 or single[0] == straight[-1] + 1:
                         straight.append(single[0])
                     else:
