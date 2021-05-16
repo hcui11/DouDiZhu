@@ -94,8 +94,52 @@ class Game:
             self.hands[0, deck[i]] += 1
 
     def legal_actions(self):
-        # TODO
-        pass
+        singles = []
+        doubles = []
+        triples = []
+        possible_actions = []
+
+        for i, n in enumerate(self.hands[self.turn]):
+            if n > 0:
+                singles.append([i])
+            if n > 1:
+                doubles.append([i, i])
+            if n > 2:
+                doubles.append([i, i, i])
+            if n == 4:
+                possible_actions.append([i, i, i, i])
+        # No Last Move or Single Last Move
+        if not self.last_move or self.last_move.type == "single":
+            possible_actions.extend(singles)
+        # No Last Move or Double Last Move
+        if not self.last_move or self.last_move.type == "double":
+            possible_actions.extend(doubles)
+        # No Last Move or Triple Last Move
+        if not self.last_move or self.last_move.type == "double":
+            possible_actions.extend(triples)
+        # No Last Move or Triple+1 Last Move
+        if not self.last_move or self.last_move.type == "triple+1":
+            for triple in triples:
+                for single in singles:
+                    possible_actions.append(triple + single)
+        # No Last Move or Triple+2 Last Move
+        if not self.last_move or self.last_move.type == "triple+2":
+            for triple in triples:
+                for double in doubles:
+                    possible_actions.append(triple + double)
+        # No Last Move or Straight Last Move
+        if not self.lat_move or self.last_move.type == "straight":
+            straight = []
+            for single in singles:
+                if len(straight) == 0 or single == straight[-1]:
+                    straight.append(single)
+                else:
+                    straight = []
+                if len(straight) > 4:
+                    possible_actions.append(straight[:])
+
+        return possible_actions
+
 
     def over(self):
         for i in range(3):
