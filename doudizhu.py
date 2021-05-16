@@ -1,25 +1,14 @@
+import random
 import numpy as np
-class Card:
-    def __init__(self, rank, suit):
-        self.rank = rank
-        self.suit_num = suit
-        suits = ["hearts", "diamonds", "clubs", "spades"]
-
-        self.suit = suits[suit]
-
-    def __str__(self):
-        return str(self.rank) + " of " + self.suit
-    def __repr__(self):
-        return str(self)
-
-class Hand:
-    #types:
+class Play:
+    # types:
     #single, double, triple, bomb, triple+1
     def __init__(self, cards):
-        self.cards = sorted(cards, key = lambda x: x.rank)
+        self.cards = sorted(cards)
         self.type = None
         self.main_rank = None
         self.get_info(self.cards)
+
     def __str__(self):
         s = ""
         for card in self.cards:
@@ -27,142 +16,143 @@ class Hand:
         return s
 
     def get_info(self, cards):
-        #print(cards)
+        # print(cards)
         if len(cards) == 1:
             self.type = "single"
-            self.main_rank = cards[0].rank
+            self.main_rank = cards[0]
         elif len(cards) == 2:
-            if cards[0].rank == cards[1].rank:
+            if cards[0] == cards[1]:
                 self.type = "double"
-                self.main_rank = cards[0].rank
+                self.main_rank = cards[0]
             else:
                 self.type = "invalid"
         elif len(cards) == 3:
-            if cards[0].rank == cards[1].rank == cards[2].rank:
+            if cards[0] == cards[1] == cards[2]:
                 self.type = "triple"
-                self.main_rank = cards[0].rank
+                self.main_rank = cards[0]
             else:
                 self.type = "invalid"
         elif len(cards) == 4:
-            if cards[0].rank == cards[1].rank == cards[2].rank == cards[3].rank:
+            if cards[0] == cards[1] == cards[2] == cards[3]:
                 self.type = "bomb"
-                self.main_rank = cards[0].rank
-            elif cards[0].rank == cards[1].rank == cards[2].rank:
+                self.main_rank = cards[0]
+            elif cards[0] == cards[1] == cards[2]:
                 self.type = "triple+1"
-                self.main_rank = cards[0].rank
-            elif cards[1].rank == cards[2].rank == cards[3].rank:
+                self.main_rank = cards[0]
+            elif cards[1] == cards[2] == cards[3]:
                 self.type = "triple+1"
-                self.main_rank = cards[1].rank
+                self.main_rank = cards[1]
         elif len(cards) == 5:
-            if cards[0].rank == cards[1].rank == cards[2].rank and cards[3].rank == cards[4].rank:
+            if cards[0] == cards[1] == cards[2] and cards[3] == cards[4]:
                 self.type = "triple+2"
-                self.main_rank = cards[0].rank
-            elif cards[2].rank == cards[3].rank == cards[4].rank and cards[0].rank == cards[1].rank:
+                self.main_rank = cards[0]
+            elif cards[2] == cards[3] == cards[4] and cards[0] == cards[1]:
                 self.type = "triple+2"
-                self.main_rank = cards[2].rank
+                self.main_rank = cards[2]
             else:
                 for i in range(1, len(cards)):
-                    if cards[i].rank != cards[i-1].rank + 1:
+                    if cards[i] != cards[i-1] + 1:
                         self.type = "invalid"
                         return
                     self.type = "straight"
-                    self.main_rank = cards[0].rank
-
+                    self.main_rank = cards[0]
 
     def beats_hand(self, other):
         if other.type == "bomb":
             if self.type == "bomb" and self.main_rank > other.main_rank:
-                    return True
+                return True
             return False
         if self.type == "bomb":
             return True
 
-        #both normal hands
+        # both normal hands
         if self.type != other.type:
             return False
         return self.main_rank > other.main_rank
 
-class Player:
-    def __init__(self, hand):
-        self.hand = hand
-
-    def get_move(self):
-        pass
-
 class Game:
-    def __init__(self):
-
-        self.hands = [[] for i in range(3)]
-        self.last_move = None
-        self.distribute_cards()
-
+    def __init__(self,
+                 hands=None,
+                 last_move=None,
+                 turn=0):
+        self.hands = hands
+        self.last_move = last_move
+        self.turn = turn
+        if not hands:
+            self.hands = np.zeros((3, 14))
+            self.distribute_cards()
 
     def distribute_cards(self):
         deck = []
         for i in range(54):
-            deck.append(Card(int(i/4), i%4))
-        deck = np.array(deck)
-        np.random.shuffle(deck)
+            deck.append(i // 4)
+        random.shuffle(deck)
 
         for i in range(51):
-            self.hands[int(i/17)].append(deck[i])
+            self.hands[i // 17, deck[i]] += 1
         for i in range(51, 54):
-            self.hands[0].append(deck[i])
-        for i in range(3):
-            self.hands[i] = sorted(self.hands[i], key = lambda x: x.rank)
+            self.hands[0, deck[i]] += 1
+
+    def legal_actions(self):
+        # TODO
+        pass
 
     def over(self):
         for i in range(3):
-            if len(self.hands[i]) == 0:
+            if sum(self.hands[i]) == 0:
                 return i
         return -1
 
-    def play(self):
-        turn = 0
-        pass_counter = 0
-        while self.over() == -1:
-            if pass_counter == 2:
-                self.last_move = None
-                pass_counter = 0
-            print(f"PLAYER {turn}'s CARDS:")
-            for index, card in enumerate(self.hands[turn]):
-                print(str(index) + ":", card)
-            print("Your opponents hand sizes: ", end = "")
+    def move(self, play):
+        self.last_move = play
+        for card in play.cards:
+            self.hands[self.turn, card] -= 1
 
-            for i in range(3):
-                if i != turn:
-                    print(len(self.hands[i]), end = " ")
-            print()
-            if self.last_move != None:
-                print("The play to beat: ", self.last_move.cards)
+
+def main():
+    game = Game()
+    pass_counter = 0
+    while game.over() == -1:
+        if pass_counter == 2:
+            game.last_move = None
+            pass_counter = 0
+
+        print(f"PLAYER {game.turn}'s CARDS:")
+        print(game.hands[game.turn])
+
+        print("Your opponents hand sizes: ", end="")
+        for i in range(3):
+            if i != game.turn:
+                print(sum(game.hands[i]), end=" ")
+        print()
+
+        if game.last_move != None:
+            print("The play to beat: ", game.last_move.cards)
+        else:
+            print("There is no play to beat")
+        
+        while (True):
+            move = input(
+                "Please enter your move as a list of numbers separated by a space or enter PASS: ")
+            if move == "PASS" or move == "P":
+                pass_counter += 1
+                break
+
+            move = [int(i) for i in move.split()]
+            play = Play(move)
+            if play.type == "invalid":
+                print("Your move is invalid")
+            elif game.last_move != None and not play.beats_hand(game.last_move):
+                print("Your move does not beat the last move played")
             else:
-                print("There is no play to beat")
-            while (True):
-                move = input("Please enter your move as a list of numbers separated by a space or enter PASS: ")
-                if move == "PASS" or move == "P":
-                    pass_counter += 1
-                    break
+                pass_counter = 0
+                print(f"You played a {play.type}!")
+                input("Press anything to continue")
+                game.move(play)
+                break
+        game.turn = (game.turn + 1) % 3
+        print("\n\n")
+    print(f"Player {game.over()} wins!")
 
-                move = [int(i) for i in move.split()]
-                move.sort()
-                play = Hand([self.hands[turn][i] for i in move])
-                if play.type == "invalid":
-                    print("Your move is invalid")
-                elif self.last_move != None and not play.beats_hand(self.last_move):
-                    print("Your move does not beat the last move played")
-                else:
-                    pass_counter = 0
-                    print(f"You played a {play.type}!")
-                    input("Press anything to continue")
-                    self.last_move = play
-                    for i in move[::-1]:
-                        self.hands[turn].pop(i)
-                    break
-            turn = (turn + 1) % 3
-            print("\n\n")
-        print(f"Player {self.over()} wins!")
-
-
-
-G = Game()
-G.play()
+if __name__ == '__main__':
+    main()

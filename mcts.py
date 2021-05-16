@@ -1,4 +1,5 @@
 import numpy as np
+from doudizhu import Game
 
 class MonteCarloTreeSearchNode():
     def __init__(self, state, parent=None, parent_action=None):
