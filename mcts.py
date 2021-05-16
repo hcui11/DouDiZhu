@@ -2,18 +2,19 @@ import numpy as np
 from doudizhu import Game, Play
 
 class MonteCarloTreeSearchNode():
-    def __init__(self, state, parent=None, parent_action=None):
+    def __init__(self, state, player, parent=None, parent_action=None):
         self.state = state
         self.parent = parent
+        self.player = player
         self.parent_action = parent_action
         self.children = []
         self._number_of_visits = 0
-        self._results = {1: 0, -1: 0} # 1 for win, -1 for loss
+        self._results = {1: 0, 0: 0} # 1 for win, 0 for loss
         self._untried_actions = self.state.legal_actions()
 
     def q(self):
         wins = self._results[1]
-        loses = self._results[-1]
+        loses = self._results[0]
         return wins - loses
 
     def n(self):
@@ -21,7 +22,7 @@ class MonteCarloTreeSearchNode():
 
     def expand(self):
         action = self._untried_actions.pop()
-        next_state = self.state.move(action)
+        next_state = self.state.move(Play(action))
         child_node = MonteCarloTreeSearchNode(next_state,
                                               parent=self,
                                               parent_action=action)
@@ -29,17 +30,18 @@ class MonteCarloTreeSearchNode():
         self.children.append(child_node)
         return child_node
 
-    def is_terminal_node(self):
-        return self.state.is_game_over()
-
     def simulate(self):
         current_state = self.state
         
-        while not current_state.is_game_over():
+        while current_state.over() < 0:
             possible_moves = current_state.legal_actions()
             action = possible_moves[np.random.randint(len(possible_moves))]
-            current_state = current_state.move(action)
-        return current_state.game_result()
+            current_state = current_state.move(Play(action))
+        winner = current_state.over()
+        if self.player == 0:
+            return int(winner == 0)
+        else:
+            return int(winner == 1 or winner == 2)
 
     def backpropagate(self, result):
         self._number_of_visits += 1.
@@ -56,7 +58,7 @@ class MonteCarloTreeSearchNode():
 
     def select(self):
         current_node = self
-        while not current_node.is_terminal_node():
+        while current_node.state.over() < 0:
             if not current_node.is_fully_expanded():
                 return current_node.expand()
             else:
@@ -70,49 +72,6 @@ class MonteCarloTreeSearchNode():
             reward = v.simulate()
             v.backpropagate(reward)
         return self.best_child(c_param=0.1)
-
-    def get_legal_actions(self): 
-        '''
-        Modify according to your game or
-        needs. Constructs a list of all
-        possible actions from current state.
-        Returns a list.
-        '''
-        pass
-    
-    def is_game_over(self):
-        '''
-        Modify according to your game or 
-        needs. It is the game over condition
-        and depends on your game. Returns
-        true or false
-        '''
-        pass
-
-    def game_result(self):
-        '''
-        Modify according to your game or 
-        needs. Returns 1 or 0 or -1 depending
-        on your state corresponding to win,
-        tie or a loss.
-        '''
-        pass
-
-    def move(self,action):
-        '''
-        Modify according to your game or 
-        needs. Changes the state of your 
-        board with a new value. For a normal
-        Tic Tac Toe game, it can be a 3 by 3
-        array with all the elements of array
-        being 0 initially. 0 means the board 
-        position is empty. If you place x in
-        row 2 column 3, then it would be some 
-        thing like board[2][3] = 1, where 1
-        represents that x is placed. Returns 
-        the new state after making a move.
-        '''
-        pass
 
 def main():
     root = MonteCarloTreeSearchNode(state = initial_state)

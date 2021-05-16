@@ -171,6 +171,7 @@ class Game:
                 if len(straight) > 4 and straight[0] > self.last_move.cards[0]:
                     possible_actions.append(straight[:])
 
+        possible_actions.append([-1])
         return possible_actions
 
 
@@ -209,23 +210,20 @@ def main():
             print("There is no play to beat")
 
         print("Legal Actions:")
-        for action in game.legal_actions():
-            print(action)
+        possible_moves = game.legal_actions()
+        for i, action in enumerate(possible_moves[:-1]):
+            print(f'{i}: {action}')
         
         while (True):
             move = input(
-                "Please enter your move as a list of numbers separated by a space or enter PASS: ")
+                "Please enter your indexed move or enter PASS: ")
             if move == "PASS" or move == "P":
                 pass_counter += 1
                 break
-
-            move = [int(i) for i in move.split()]
-            play = Play(move)
-            if play.type == "invalid":
-                print("Your move is invalid")
-            elif game.last_move != None and not play.beats_hand(game.last_move):
-                print("Your move does not beat the last move played")
-            else:
+            
+            if move.isnumeric() and int(move) < len(possible_moves):
+                move = possible_moves[int(move)]
+                play = Play(move)
                 pass_counter = 0
                 print(f"You played a {play.type}!")
                 input("Press anything to continue")
