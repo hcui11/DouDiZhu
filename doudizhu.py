@@ -74,10 +74,12 @@ class Game:
     def __init__(self,
                  hands=None,
                  last_move=None,
-                 turn=0):
+                 turn=0,
+                 passes=0):
         self.hands = hands
         self.last_move = last_move
         self.turn = turn
+        self.passes = passes
         if not hands:
             self.hands = np.zeros((3, 14))
             self.distribute_cards()
@@ -173,7 +175,7 @@ class Game:
                     if len(straight) > 4 and straight[0] > self.last_move.cards[0]:
                         possible_actions.append(straight[:])
 
-        possible_actions.append([-1])
+        possible_actions.append([])
         return possible_actions
 
 
@@ -184,63 +186,29 @@ class Game:
         return -1
 
     def move(self, play):
-        self.last_move = play
-        for card in play.cards:
-            self.hands[self.turn, card] -= 1
+        if play.cards:
+            self.last_move = play
+            for card in play.cards:
+                self.hands[self.turn, card] -= 1
+            self.passes = 0
+        else:
+            self.passes += 1
+            if self.passes == 2:
+                self.passes = 0
+                self.last_move = None
+        self.turn = (self.turn + 1) % 3
 
     def simulate(self, play):
         hands = self.hands + 0
-        for card in play.cards:
-            hands[self.turn, card] -= 1
-        turn = (self.turn + 1) % 3
-        return hands, play, turn
-
-
-def main():
-    game = Game()
-    pass_counter = 0
-    while game.over() == -1:
-        if pass_counter == 2:
-            game.last_move = None
-            pass_counter = 0
-
-        print(f"PLAYER {game.turn}'s CARDS:")
-        print(game.hands[game.turn])
-
-        print("Your opponents hand sizes: ", end="")
-        for i in range(3):
-            if i != game.turn:
-                print(sum(game.hands[i]), end=" ")
-        print()
-
-        if game.last_move != None:
-            print("The play to beat: ", game.last_move.cards)
+        if play.cards:
+            for card in play.cards:
+                hands[self.turn, card] -= 1
+            passes = 0
         else:
-            print("There is no play to beat")
-
-        print("Legal Actions:")
-        possible_moves = game.legal_actions()
-        for i, action in enumerate(possible_moves[:-1]):
-            print(f'{i}: {action}')
-        
-        while (True):
-            move = input(
-                "Please enter your indexed move or enter PASS: ")
-            if move == "PASS" or move == "P":
-                pass_counter += 1
-                break
-            
-            if move.isnumeric() and int(move) < len(possible_moves):
-                move = possible_moves[int(move)]
-                play = Play(move)
-                pass_counter = 0
-                print(f"You played a {play.type}!")
-                input("Press anything to continue")
-                game.move(play)
-                break
-        game.turn = (game.turn + 1) % 3
-        print("\n\n")
-    print(f"Player {game.over()} wins!")
-
-if __name__ == '__main__':
-    main()
+            play = self.last_move
+            passes = self.passes + 1
+            if self.passes == 2:
+                passes = 0
+                play = None
+        turn = (self.turn + 1) % 3
+        return hands, play, turn, passes
