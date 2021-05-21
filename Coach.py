@@ -47,7 +47,8 @@ class Coach():
         """
         trainExamples = []
         board = self.game.getInitBoard()
-        self.curPlayer = 1
+        self.curPlayer = 0
+        self.passes = 0
         episodeStep = 0
 
         while True:
@@ -63,12 +64,16 @@ class Coach():
             trainExamples.append([canonicalBoard, self.curPlayer, pi, None])
 
             action = np.random.choice(len(pi), p=pi)
-            board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
+            board, self.curPlayer, self.passes = self.game.getNextState(board, self.curPlayer, action, self.passes)
 
             r = self.game.getGameEnded(board, self.curPlayer)
 
             if r != 0:
-                return [(x[0], x[2], r * ((-1) ** (x[1] != self.curPlayer))) for x in trainExamples]
+                if self.curPlayer == 0:
+                    cond = lambda x: x > 0
+                else:
+                    cond = lambda x: x < 1
+                return [(x[0], x[2], r * ((-1) ** cond(x[1]))) for x in trainExamples]
 
     def learn(self):
         """

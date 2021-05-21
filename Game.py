@@ -22,6 +22,7 @@ class Game():
         # self.last_move = None
         with open('action_encoder.pt', 'rb') as f:
             self.encoded_actions = pickle.load(f)
+        self.decoded_actions = {i: a for a, i in self.encoded_actions.items()}
 
     def getInitBoard(self) -> np.ndarray:
         """
@@ -65,6 +66,7 @@ class Game():
         """
         new_board = np.abs(board)
         new_board[42:] = 0
+        action = self.decoded_actions[action]
         
         for card in action:
             new_board[card + 14 * player] -= 1
