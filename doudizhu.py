@@ -50,7 +50,7 @@ class Play:
             self.type = 'single' # 14
         elif len(cards) == 2:
             if cards[0] == 13:
-                self.type = 'rocket' 
+                self.type = 'rocket'
             else:
                 self.type = 'double' # 14
         elif len(cards) == 3:
@@ -83,13 +83,13 @@ class Play:
                 self.type = 'straight'
         elif len(cards) == 10:
             if cards[0] == cards[1] == cards[2]:
-                self.type = 'airplane+2' # sum(i * i choose 2) i=7 to 11 = 1750
+                self.type = 'airplane+2' # sum(i * i choose (13 - i) i=9 to 11 = 2939
             else:
                 self.type = 'straight'
         else:
             self.type = 'straight'
-        
-        # TOTAL NUMBER OF POSSIBLE MOVES: 5716
+
+        # TOTAL NUMBER OF POSSIBLE MOVES: 8542
 
 class GameState:
     def __init__(self,
@@ -107,7 +107,7 @@ class GameState:
         self.last_move = last_move
         self.turn = turn
         self.passes = passes
-        
+
         if hands is None:
             self.hands = np.zeros((3, 14), dtype=int)
             self.distribute_cards()
@@ -139,7 +139,7 @@ class GameState:
                     chain.extend(card)
                 else:
                     chain = card[:]
-                    
+
                 if constraint:
                     if len(chain) == constraint and chain[0] > self.last_move.cards[0]:
                         chains.append(chain[:])
@@ -173,12 +173,15 @@ class GameState:
             if n == 4:
                 possible_actions.append([i, i, i, i])
                 quads.append([i, i, i, i])
-        
+
         # No Last Move
         if not self.last_move:
             possible_actions.extend(singles)
+            print('Length after singles', len(possible_actions))
             possible_actions.extend(doubles)
+            print('Length after doubles', len(possible_actions))
             possible_actions.extend(triples)
+            print('Length after triples', len(possible_actions))
             for triple in triples:
                 for single in singles[:-1]:
                     if triple[0] != single[0]:
@@ -186,22 +189,27 @@ class GameState:
                 for double in doubles:
                     if triple[0] != double[0]:
                         possible_actions.append(triple + double)
+            print('Length after triples+n', len(possible_actions))
             possible_actions.extend(self.generate_chains(singles, 5, 12))
             possible_actions.extend(self.generate_chains(doubles, 6, 20))
-            
-            airplanes = self.generate_chains(triples, 6, 15)
+
+            airplanes = self.generate_chains(triples, 6, 18)
             possible_actions.extend(airplanes)
+            print('Length after airplanes', len(possible_actions))
             kickers1 = set([i for i, v in enumerate(self.hands[self.turn]) if v > 0])
             kickers2 = set([i for i, v in enumerate(self.hands[self.turn]) if v > 1])
             for airplane in airplanes:
                 invalids = set(range(airplane[0], airplane[-1] + 1))
                 valids1 = kickers1 - invalids - {13}
-                for combo in combinations(valids1, len(airplane) // 3):
-                    possible_actions.append(airplane + list(combo))
-                if len(airplanes) <= 12:
+                if len(airplane) <= 15:
+                    for combo in combinations(valids1, len(airplane) // 3):
+                        possible_actions.append(airplane + list(combo))
+                if len(airplane) <= 12:
                     valids2 = kickers2 - invalids - {13}
                     for combo in combinations(valids2, len(airplane) // 3):
                         possible_actions.append(airplane + list(combo) * 2)
+
+            print('Length after airplanes+n', len(possible_actions))
 
             for q in quads:
                 q_val = q[0]
@@ -256,7 +264,7 @@ class GameState:
                 k = int(self.last_move.type[-1])
                 n -= n * k // (3 + k)
             airplanes = self.generate_chains(triples, 6, 18, constraint=n)
-                        
+
             # Airplane+1 Last Move
             if self.last_move.type == 'airplane+1':
                 kickers = set([i for i, v in enumerate(self.hands[self.turn]) if v > 0])
@@ -280,7 +288,7 @@ class GameState:
             num_kicker_pairs = int(self.last_move.type[-1])
 
             curr_val = self.last_move.cards[0]
-                
+
             possible_kickers = set([card for card, num in enumerate(self.hands[self.turn]) if num >= num_kicker_pairs])
             for q in quads:
                 q_val = q[0]

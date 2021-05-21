@@ -51,7 +51,7 @@ class Game():
         Returns:
             actionSize: number of all possible actions
         """
-        return 5716
+        return 8542
 
     def getNextState(self, board, player, action):
         """
@@ -71,7 +71,7 @@ class Game():
             new_board[card * 4] += 1
 
         return new_board, (player + 1) % 3
-        
+
 
     def getValidMoves(self, board, player):
         """
