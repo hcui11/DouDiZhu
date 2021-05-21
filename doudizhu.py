@@ -7,6 +7,23 @@ from itertools import combinations
 PlayType = Optional[Literal['single', 'double', 'triple', 'bomb', 'triple+1', 'triple+2', 'sisters',
                             'airplane', 'airplane+1', 'airplane+2', 'quad+1', 'quad+2', 'straight', 'PASS']]
 
+CARD_STR = {
+    0: '3',
+    1: '4',
+    2: '5',
+    3: '6',
+    4: '7',
+    5: '8',
+    6: '9',
+    7: '10',
+    8: 'J',
+    9: 'Q',
+    10: 'K',
+    11: 'A',
+    12: '2',
+    13: 'JOKER'
+}
+
 class Play:
     def __init__(self, cards: List[int]):
         '''
@@ -22,7 +39,7 @@ class Play:
     def __str__(self):
         s = ''
         for card in self.cards:
-            s += str(card) + '\n'
+            s += CARD_STR[card] + ' '
         return s
 
 

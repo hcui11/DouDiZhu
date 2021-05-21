@@ -1,23 +1,7 @@
 import numpy as np
-from doudizhu import GameState, Play
+from doudizhu import GameState, Play, CARD_STR
 from mcts import MonteCarloTreeSearchNode
 
-CARD_STR = {
-    0: '3',
-    1: '4',
-    2: '5',
-    3: '6',
-    4: '7',
-    5: '8',
-    6: '9',
-    7: '10',
-    8: 'J',
-    9: 'Q',
-    10: 'K',
-    11: 'A',
-    12: '2',
-    13: 'JOKER'
-}
 
 def main():
     game = GameState()
@@ -38,7 +22,7 @@ def main():
         print()
 
         if game.last_move != None:
-            print('The play to beat: ', [CARD_STR[c] for c in game.last_move.cards])
+            print('The play to beat: ', game.last_move)
         else:
             print('There is no play to beat')
 
@@ -52,6 +36,7 @@ def main():
                 landlordAI = landlordAI.best_action()
                 landlordAI.parent = None
                 print(f'Landlord played a {landlordAI.parent_action.type}!')
+                print(landlordAI.parent_action)
                 input('Press anything to continue')
                 game.move(landlordAI.parent_action)
                 break
