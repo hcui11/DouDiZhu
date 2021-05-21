@@ -1,5 +1,7 @@
 import numpy as np
 from random import shuffle
+from doudizhu import GameState, Play
+import pickle
 
 class Game():
     """
@@ -15,9 +17,11 @@ class Game():
         """
         player: 0 for landlord, 1 or 2 for farmers
         """
-        self.hands = np.zeros((3, 14), dtype=int)
-        self.player = 0
-        self.last_move = None
+        # self.hands = np.zeros((3, 14), dtype=int)
+        # self.player = 0
+        # self.last_move = None
+        with open('action_encoder.pt', 'rb') as f:
+            self.encoded_actions = pickle.load(f)
 
     def getInitBoard(self) -> np.ndarray:
         """
@@ -25,26 +29,20 @@ class Game():
             startBoard: a representation of the board (ideally this is the form
                         that will be the input to your neural network)
         """
+        hands = np.zeros((3, 14), dtype=int)
         deck = []
         for i in range(54):
             deck.append(i // 4)
         shuffle(deck)
 
         for i in range(51):
-            self.hands[i // 17, deck[i]] += 1
+            hands[i // 17, deck[i]] += 1
         for i in range(51, 54):
-            self.hands[0, deck[i]] += 1
+            hands[0, deck[i]] += 1
 
         last_move = np.zeros((14,))
-        hands = np.flatten(self.hands)
+        hands = hands.flatten()
         return np.concatenate((hands, last_move))
-
-    # def getBoardSize(self):
-    #     """
-    #     Returns:
-    #         (x,y): a tuple of board dimensions
-    #     """
-    #     pass
 
     def getActionSize(self) -> int:
         """
@@ -53,24 +51,34 @@ class Game():
         """
         return 8542
 
-    def getNextState(self, board, player, action):
+    def getNextState(self, board, player, action, passes):
         """
         Input:
             board: current board
             player: current player
             action: action taken by current player
+            passes: the number of passes
 
         Returns:
             nextBoard: board after applying action
             nextPlayer: player who plays in the next turn (should be -player)
         """
-        new_board = board + 0
+        new_board = np.abs(board)
         new_board[42:] = 0
-        for card in action.cards:
-            new_board[card * (player + 1)] -= 1
-            new_board[card * 4] += 1
+        
+        for card in action:
+            new_board[card + 14 * player] -= 1
+            new_board[card + 42] += 1
 
-        return new_board, (player + 1) % 3
+        if not action:
+            passes += 1
+        else:
+            passes = 0
+            
+        if passes == 2:
+            passes = 0
+
+        return new_board, (player + 1) % 3, passes
 
 
     def getValidMoves(self, board, player):
@@ -84,7 +92,18 @@ class Game():
                         moves that are valid from the current board and player,
                         0 for invalid moves
         """
-        pass
+        hand = np.abs([board[14 * player: 14 * (player + 1)]])
+        last_move = []
+        for i in np.argsort(-board[42:]):
+            for _ in range(int(board[42:][i])):
+                last_move.append(i)
+        last_move = Play(last_move) if last_move else None
+
+        game = GameState(hands=hand, last_move=last_move)
+        valid_actions = [self.encoded_actions[tuple(action)] for action in game.legal_actions()]
+        one_hot = np.zeros(self.getActionSize())
+        one_hot[valid_actions] = 1
+        return one_hot
 
     def getGameEnded(self, board, player):
         """
@@ -97,14 +116,21 @@ class Game():
                small non-zero value for draw.
 
         """
-        r = 0
-        for i in range(3):
-            if sum(self.hands[i]) == 0:
-                if i == 0:
-                    return 1 if player == 0 else -1
-                else:
-                    return 1 if player != 0 else -1
-        return r
+        win0 = np.sum(board[:14]) == 0
+        win1 = np.sum(board[14:28]) == 0
+        win2 = np.sum(board[28:42]) == 0
+        if player == 0:
+            if win0:
+                return 1
+            elif win1 or win2:
+                return -1
+        else:
+            if win1 or win2:
+                return 1
+            elif win0:
+                return -1
+
+        return 0
 
     def getCanonicalForm(self, board, player):
         """
@@ -121,7 +147,7 @@ class Game():
                             the colors and return the board.
         """
         # copies board
-        canonical_board = board + 0
+        canonical_board = np.abs(board)
         canonical_board[:42] *= -1
         canonical_board[14 * player: 14 * (player + 1)] *= -1
         return canonical_board
