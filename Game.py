@@ -1,3 +1,6 @@
+import numpy as np
+from random import shuffle
+
 class Game():
     """
     This class specifies the base Game class. To define your own game, subclass
@@ -9,42 +12,66 @@ class Game():
     See othello/OthelloGame.py for an example implementation.
     """
     def __init__(self):
-        pass
+        """
+        player: 0 for landlord, 1 or 2 for farmers
+        """
+        self.hands = np.zeros((3, 14), dtype=int)
+        self.player = 0
+        self.last_move = None
 
-    def getInitBoard(self):
+    def getInitBoard(self) -> np.ndarray:
         """
         Returns:
             startBoard: a representation of the board (ideally this is the form
                         that will be the input to your neural network)
         """
-        pass
+        deck = []
+        for i in range(54):
+            deck.append(i // 4)
+        shuffle(deck)
 
-    def getBoardSize(self):
-        """
-        Returns:
-            (x,y): a tuple of board dimensions
-        """
-        pass
+        for i in range(51):
+            self.hands[i // 17, deck[i]] += 1
+        for i in range(51, 54):
+            self.hands[0, deck[i]] += 1
 
-    def getActionSize(self):
+        last_move = np.zeros((14,))
+        hands = np.flatten(self.hands)
+        return np.concatenate((hands, last_move))
+
+    # def getBoardSize(self):
+    #     """
+    #     Returns:
+    #         (x,y): a tuple of board dimensions
+    #     """
+    #     pass
+
+    def getActionSize(self) -> int:
         """
         Returns:
             actionSize: number of all possible actions
         """
-        pass
+        return 5716
 
     def getNextState(self, board, player, action):
         """
         Input:
             board: current board
-            player: current player (1 or -1)
+            player: current player
             action: action taken by current player
 
         Returns:
             nextBoard: board after applying action
             nextPlayer: player who plays in the next turn (should be -player)
         """
-        pass
+        new_board = board + 0
+        new_board[42:] = 0
+        for card in action.cards:
+            new_board[card * (player + 1)] -= 1
+            new_board[card * 4] += 1
+
+        return new_board, (player + 1) % 3
+        
 
     def getValidMoves(self, board, player):
         """
@@ -63,20 +90,27 @@ class Game():
         """
         Input:
             board: current board
-            player: current player (1 or -1)
+            player: current player
 
         Returns:
             r: 0 if game has not ended. 1 if player won, -1 if player lost,
                small non-zero value for draw.
 
         """
-        pass
+        r = 0
+        for i in range(3):
+            if sum(self.hands[i]) == 0:
+                if i == 0:
+                    return 1 if player == 0 else -1
+                else:
+                    return 1 if player != 0 else -1
+        return r
 
     def getCanonicalForm(self, board, player):
         """
         Input:
             board: current board
-            player: current player (1 or -1)
+            player: current player
 
         Returns:
             canonicalBoard: returns canonical form of board. The canonical form
@@ -86,20 +120,24 @@ class Game():
                             board as is. When the player is black, we can invert
                             the colors and return the board.
         """
-        pass
+        # copies board
+        canonical_board = board + 0
+        canonical_board[:42] *= -1
+        canonical_board[14 * player: 14 * (player + 1)] *= -1
+        return canonical_board
 
-    def getSymmetries(self, board, pi):
-        """
-        Input:
-            board: current board
-            pi: policy vector of size self.getActionSize()
+    # def getSymmetries(self, board, pi):
+    #     """
+    #     Input:
+    #         board: current board
+    #         pi: policy vector of size self.getActionSize()
 
-        Returns:
-            symmForms: a list of [(board,pi)] where each tuple is a symmetrical
-                       form of the board and the corresponding pi vector. This
-                       is used when training the neural network from examples.
-        """
-        pass
+    #     Returns:
+    #         symmForms: a list of [(board,pi)] where each tuple is a symmetrical
+    #                    form of the board and the corresponding pi vector. This
+    #                    is used when training the neural network from examples.
+    #     """
+    #     pass
 
     def stringRepresentation(self, board):
         """
@@ -110,4 +148,4 @@ class Game():
             boardString: a quick conversion of board to a string format.
                          Required by MCTS for hashing.
         """
-        pass
+        return str(board)

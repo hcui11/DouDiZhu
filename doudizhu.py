@@ -47,48 +47,49 @@ class Play:
         if len(cards) == 0:
             self.type = 'PASS'
         elif len(cards) == 1:
-            self.type = 'single'
+            self.type = 'single' # 14
         elif len(cards) == 2:
             if cards[0] == 13:
-                self.type = 'rocket'
+                self.type = 'rocket' 
             else:
-                self.type = 'double'
+                self.type = 'double' # 14
         elif len(cards) == 3:
-            self.type = 'triple'
+            self.type = 'triple' # 13
         elif len(cards) == 4:
             if cards[0] == cards[1] == cards[2] == cards[3]:
-                self.type = 'bomb'
+                self.type = 'bomb' # 13
             elif cards[0] == cards[1] == cards[2]:
-                self.type = 'triple+1'
+                self.type = 'triple+1' # 13 * 12 = 156
         elif len(cards) == 5:
             if cards[0] == cards[1] == cards[2] and cards[3] == cards[4]:
-                self.type = 'triple+2'
+                self.type = 'triple+2' # 13 * 12 = 156
             else:
-                self.type = 'straight'
+                self.type = 'straight' # sum(i) i=1 to 8 = 36
         elif len(cards) == 6:
             if cards[0] == cards[1] and cards[2] == cards[3] and cards[4] == cards[5]:
-                self.type = 'sisters'
+                self.type = 'sisters' # sum(i) i=3 to 10 = 52
             elif cards[0] == cards[1] == cards[2] == cards[3]:
-                self.type = 'quad+1'
+                self.type = 'quad+1' # 13 * 12C2 = 13 * 66 = 858
             elif cards[0] == cards[1] == cards[2]:
-                self.type = 'airplane'
+                self.type = 'airplane' # sum(i) i=7 to 11 = 45
             else:
                 self.type = 'straight'
         elif len(cards) == 8:
             if cards[0] == cards[1] == cards[2] == cards[3]:
-                self.type = 'quad+2'
+                self.type = 'quad+2' # 13 * 12C2 = 13 * 66 = 858
             elif cards[0] == cards[1] == cards[2]:
-                self.type = 'airplane+1'
+                self.type = 'airplane+1' # sum(i * i choose (13 - i) i=8 to 11 = 3387
             else:
                 self.type = 'straight'
         elif len(cards) == 10:
             if cards[0] == cards[1] == cards[2]:
-                self.type = 'airplane+2'
+                self.type = 'airplane+2' # sum(i * i choose 2) i=7 to 11 = 1750
             else:
                 self.type = 'straight'
         else:
             self.type = 'straight'
         
+        # TOTAL NUMBER OF POSSIBLE MOVES: 5716
 
 class GameState:
     def __init__(self,
@@ -124,7 +125,7 @@ class GameState:
             self.hands[0, deck[i]] += 1
 
 
-    def generate_chains(self, cards, min_length, constraint=0):
+    def generate_chains(self, cards, min_length, max_length, constraint=0):
         n = len(cards[0]) if cards else 0
         chains = []
         chain = []
@@ -132,6 +133,8 @@ class GameState:
             if card[0] != 12 and card[0] != 13:
                 if len(chain) == 0 or card[0] == chain[-1] + 1:
                     if constraint and len(chain) == constraint:
+                        chain = chain[n:]
+                    if len(chain) == max_length:
                         chain = chain[n:]
                     chain.extend(card)
                 else:
@@ -159,10 +162,11 @@ class GameState:
             if n > 0:
                 singles.append([i])
             if n > 1:
-                doubles.append([i, i])
                 # Rocket
                 if i == 13:
                     possible_actions.append([i, i])
+                else:
+                    doubles.append([i, i])
             if n > 2:
                 triples.append([i, i, i])
             # Bomb
@@ -176,32 +180,33 @@ class GameState:
             possible_actions.extend(doubles)
             possible_actions.extend(triples)
             for triple in triples:
-                for single in singles:
+                for single in singles[:-1]:
                     if triple[0] != single[0]:
                         possible_actions.append(triple + single)
                 for double in doubles:
                     if triple[0] != double[0]:
                         possible_actions.append(triple + double)
-            possible_actions.extend(self.generate_chains(singles, 5))
-            possible_actions.extend(self.generate_chains(doubles, 6))
+            possible_actions.extend(self.generate_chains(singles, 5, 12))
+            possible_actions.extend(self.generate_chains(doubles, 6, 20))
             
-            airplanes = self.generate_chains(triples, 6)
+            airplanes = self.generate_chains(triples, 6, 15)
             possible_actions.extend(airplanes)
             kickers1 = set([i for i, v in enumerate(self.hands[self.turn]) if v > 0])
             kickers2 = set([i for i, v in enumerate(self.hands[self.turn]) if v > 1])
             for airplane in airplanes:
                 invalids = set(range(airplane[0], airplane[-1] + 1))
-                valids1 = kickers1 - invalids
-                valids2 = kickers2 - invalids
+                valids1 = kickers1 - invalids - {13}
                 for combo in combinations(valids1, len(airplane) // 3):
                     possible_actions.append(airplane + list(combo))
-                for combo in combinations(valids2, len(airplane) // 3):
-                    possible_actions.append(airplane + list(combo) * 2)
+                if len(airplanes) <= 12:
+                    valids2 = kickers2 - invalids - {13}
+                    for combo in combinations(valids2, len(airplane) // 3):
+                        possible_actions.append(airplane + list(combo) * 2)
 
             for q in quads:
                 q_val = q[0]
-                q_kickers1 = kickers1 - set([q_val])
-                q_kickers2 = kickers2 - set([q_val])
+                q_kickers1 = kickers1 - set([q_val]) - {13}
+                q_kickers2 = kickers2 - set([q_val]) - {13}
                 for combo in combinations(q_kickers1, 2):
                     possible_actions.append(q + list(combo))
                 for combo in combinations(q_kickers2, 2):
@@ -239,18 +244,18 @@ class GameState:
         # Straight Last Move
         elif self.last_move.type == 'straight':
             n = len(self.last_move.cards)
-            possible_actions.extend(self.generate_chains(singles, 5, constraint=n))
+            possible_actions.extend(self.generate_chains(singles, 5, 12, constraint=n))
         # Sisters Last Move
         elif self.last_move.type == 'sisters':
             n = len(self.last_move.cards)
-            possible_actions.extend(self.generate_chains(doubles, 6, constraint=n))
+            possible_actions.extend(self.generate_chains(doubles, 6, 20, constraint=n))
         # Airplane Last Move
         elif 'airplane' in self.last_move.type:
             n = len(self.last_move.cards)
             if self.last_move.type[-1].isnumeric():
                 k = int(self.last_move.type[-1])
                 n -= n * k // (3 + k)
-            airplanes = self.generate_chains(triples, 6, constraint=n)
+            airplanes = self.generate_chains(triples, 6, 18, constraint=n)
                         
             # Airplane+1 Last Move
             if self.last_move.type == 'airplane+1':
