@@ -1,5 +1,5 @@
 import numpy as np
-from doudizhu import Game, Play
+from doudizhu import GameState, Play
 
 
 class MonteCarloTreeSearchNode():
@@ -24,7 +24,7 @@ class MonteCarloTreeSearchNode():
     def expand(self):
         action = self._untried_actions.pop()
         state_params = self.state.simulate(Play(action))
-        next_state = Game(*state_params)
+        next_state = GameState(*state_params)
         child_node = MonteCarloTreeSearchNode(next_state,
                                               self.player,
                                               parent=self,
@@ -36,12 +36,12 @@ class MonteCarloTreeSearchNode():
     def simulate(self):
         current_state = self.state
 
-        while current_state.over() < 0:
+        while current_state.get_winner() < 0:
             possible_moves = current_state.legal_actions()
             action = possible_moves[np.random.randint(len(possible_moves))]
             state_params = current_state.simulate(Play(action))
-            current_state = Game(*state_params)
-        winner = current_state.over()
+            current_state = GameState(*state_params)
+        winner = current_state.get_winner()
         if self.player == 0:
             return int(winner == 0)
         else:
@@ -63,7 +63,7 @@ class MonteCarloTreeSearchNode():
 
     def select(self):
         current_node = self
-        while current_node.state.over() < 0:
+        while current_node.state.get_winner() < 0:
             if not current_node.is_fully_expanded():
                 return current_node.expand()
             else:
