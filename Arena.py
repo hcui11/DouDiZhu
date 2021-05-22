@@ -2,6 +2,7 @@ import logging
 
 from tqdm import tqdm
 
+logging.basicConfig(filename='arena.log', level=logging.DEBUG)
 log = logging.getLogger(__name__)
 
 
@@ -40,6 +41,7 @@ class Arena():
         curPlayer = 0
         board = self.game.getInitBoard()
         it = 0
+        log.info('GAME START')
         while self.game.getGameEnded(board) == 0:
             it += 1
             # if verbose:
@@ -48,6 +50,7 @@ class Arena():
             #     self.display(board)
             player_func = self.landlord if curPlayer == 0 else self.farmers
             action = player_func(self.game.getCanonicalForm(board, curPlayer))
+            log.info(action)
             valids = self.game.getValidMoves(self.game.getCanonicalForm(board, curPlayer), 1)
 
             if valids[action] == 0:

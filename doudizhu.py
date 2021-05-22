@@ -292,7 +292,8 @@ class GameState:
                     for combo in combinations(q_kickers, 2):
                         possible_actions.append(q + sorted(list(combo)) * num_kicker_pairs)
 
-        possible_actions.append([])
+        if self.last_move:
+            possible_actions.append([])
         return possible_actions
 
 

@@ -7,7 +7,7 @@ from Game import Game
 from NeuralNet import NeuralNet as nn
 from utils import *
 
-logging.basicConfig()
+logging.basicConfig(filename='main.log', level=logging.DEBUG)
 log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
