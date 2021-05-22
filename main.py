@@ -1,4 +1,5 @@
 import logging
+import sys
 
 # import coloredlogs
 
@@ -7,9 +8,11 @@ from Game import Game
 from NeuralNet import NeuralNet as nn
 from utils import *
 
-logging.basicConfig(filename='main.log', level=logging.DEBUG)
 log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
+log.addHandler(logging.FileHandler('main.log'))
+log.addHandler(logging.StreamHandler(sys.stdout))
+
 
 # coloredlogs.install(level='INFO')  # Change this to DEBUG to see more info.
 

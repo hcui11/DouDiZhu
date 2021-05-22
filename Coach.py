@@ -11,9 +11,9 @@ from tqdm import tqdm
 from Arena import Arena
 from MCTSZero import MCTS
 
-logging.basicConfig(filename='coach.log', level=logging.DEBUG)
 log = logging.getLogger(__name__)
-
+log.setLevel(logging.INFO)
+log.addHandler(logging.FileHandler('coach.log'))
 
 class Coach():
     """

@@ -5,8 +5,9 @@ import numpy as np
 
 EPS = 1e-8
 
-logging.basicConfig(filename='mcts.log', level=logging.DEBUG)
 log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
+log.addHandler(logging.FileHandler('mcts.log'))
 
 
 class MCTS():
