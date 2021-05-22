@@ -265,7 +265,7 @@ class GameState:
                 kickers = set([i for i, v in enumerate(self.hands[self.turn]) if v > 0])
                 for airplane in airplanes:
                     invalids = set(range(airplane[0], airplane[-1] + 1))
-                    valids = kickers - invalids
+                    valids = kickers - invalids - {13}
                     for combo in combinations(valids, n // 3):
                         possible_actions.append(airplane + sorted(list(combo)))
             # Airplane+2 Last Move
@@ -273,7 +273,7 @@ class GameState:
                 kickers = set([i for i, v in enumerate(self.hands[self.turn]) if v > 1])
                 for airplane in airplanes:
                     invalids = set(range(airplane[0], airplane[-1] + 1))
-                    valids = kickers - invalids
+                    valids = kickers - invalids - {13}
                     for combo in combinations(valids, n // 3):
                         possible_actions.append(airplane + sorted(list(combo)) * 2)
             else:
@@ -288,7 +288,7 @@ class GameState:
             for q in quads:
                 q_val = q[0]
                 if q_val > curr_val:
-                    q_kickers = possible_kickers - set([q_val])
+                    q_kickers = possible_kickers - set([q_val]) - {13}
                     for combo in combinations(q_kickers, 2):
                         possible_actions.append(q + sorted(list(combo)) * num_kicker_pairs)
 

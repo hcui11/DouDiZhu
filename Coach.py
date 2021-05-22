@@ -22,6 +22,7 @@ class Coach():
     """
 
     def __init__(self, game, nnet, args):
+        log.info('check me out')
         self.game = game
         self.nnet = nnet
         self.pnet = self.nnet.__class__(self.game)  # the competitor network
