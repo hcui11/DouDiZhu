@@ -2,9 +2,9 @@ import logging
 
 from tqdm import tqdm
 
-logging.basicConfig(filename='arena.log', level=logging.DEBUG)
 log = logging.getLogger(__name__)
-
+log.setLevel(logging.DEBUG)
+log.addHandler(logging.FileHandler('arena.log'))
 
 class Arena():
     """
