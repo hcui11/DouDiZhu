@@ -173,7 +173,8 @@ class GameState:
             if n == 4:
                 possible_actions.append([i, i, i, i])
                 quads.append([i, i, i, i])
-
+                
+        # print(self.last_move)
         # No Last Move
         if not self.last_move:
             possible_actions.extend(singles)
@@ -198,11 +199,11 @@ class GameState:
                 valids1 = kickers1 - invalids - {13}
                 if len(airplane) <= 15:
                     for combo in combinations(valids1, len(airplane) // 3):
-                        possible_actions.append(airplane + list(combo))
+                        possible_actions.append(airplane + sorted(list(combo)))
                 if len(airplane) <= 12:
                     valids2 = kickers2 - invalids - {13}
                     for combo in combinations(valids2, len(airplane) // 3):
-                        possible_actions.append(airplane + list(combo) * 2)
+                        possible_actions.append(airplane + sorted(list(combo)) * 2)
 
 
             for q in quads:
@@ -210,9 +211,9 @@ class GameState:
                 q_kickers1 = kickers1 - set([q_val]) - {13}
                 q_kickers2 = kickers2 - set([q_val]) - {13}
                 for combo in combinations(q_kickers1, 2):
-                    possible_actions.append(q + list(combo))
+                    possible_actions.append(q + sorted(list(combo)))
                 for combo in combinations(q_kickers2, 2):
-                    possible_actions.append(q + list(combo) * 2)
+                    possible_actions.append(q + sorted(list(combo)) * 2)
 
         # Single Last Move
         elif self.last_move.type == 'single':
@@ -233,7 +234,7 @@ class GameState:
         elif self.last_move.type == 'triple+1':
             for triple in triples:
                 if triple[0] > self.last_move.cards[0]:
-                    for single in singles:
+                    for single in singles[:-1]:
                         if triple[0] != single[0]:
                             possible_actions.append(triple + single)
         # Triple+2 Last Move
@@ -252,7 +253,7 @@ class GameState:
             n = len(self.last_move.cards)
             possible_actions.extend(self.generate_chains(doubles, 6, 20, constraint=n))
         # Airplane Last Move
-        elif 'airplane' in self.last_move.type:
+        elif 'airplane' == self.last_move.type[:8]:
             n = len(self.last_move.cards)
             if self.last_move.type[-1].isnumeric():
                 k = int(self.last_move.type[-1])
@@ -266,7 +267,7 @@ class GameState:
                     invalids = set(range(airplane[0], airplane[-1] + 1))
                     valids = kickers - invalids
                     for combo in combinations(valids, n // 3):
-                        possible_actions.append(airplane + list(combo))
+                        possible_actions.append(airplane + sorted(list(combo)))
             # Airplane+2 Last Move
             elif self.last_move.type == 'airplane+2':
                 kickers = set([i for i, v in enumerate(self.hands[self.turn]) if v > 1])
@@ -274,10 +275,10 @@ class GameState:
                     invalids = set(range(airplane[0], airplane[-1] + 1))
                     valids = kickers - invalids
                     for combo in combinations(valids, n // 3):
-                        possible_actions.append(airplane + list(combo) * 2)
+                        possible_actions.append(airplane + sorted(list(combo)) * 2)
             else:
                 possible_actions.extend(airplanes)
-        elif 'quad' in self.last_move.type:
+        elif 'quad' == self.last_move.type[:4]:
             n = len(self.last_move.cards)
             num_kicker_pairs = int(self.last_move.type[-1])
 
@@ -289,7 +290,7 @@ class GameState:
                 if q_val > curr_val:
                     q_kickers = possible_kickers - set([q_val])
                     for combo in combinations(q_kickers, 2):
-                        possible_actions.append(q + list(combo) * num_kicker_pairs)
+                        possible_actions.append(q + sorted(list(combo)) * num_kicker_pairs)
 
         possible_actions.append([])
         return possible_actions

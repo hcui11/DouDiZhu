@@ -102,8 +102,8 @@ class Game():
         """
         hand = np.array([board[:14]])
         last_move = []
-        for i in np.argsort(-board[42:]):
-            for _ in range(int(board[42:][i])):
+        for i in np.argsort(-board[42:56]):
+            for _ in range(int(board[42:56][i])):
                 last_move.append(i)
         last_move = Play(last_move) if last_move else None
 
