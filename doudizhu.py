@@ -1,11 +1,11 @@
 import numpy as np
 
 from random import shuffle
-from typing import Optional, List, Literal
+from typing import Optional, List
 from itertools import combinations
 
-PlayType = Optional[Literal['single', 'double', 'triple', 'bomb', 'triple+1', 'triple+2', 'sisters',
-                            'airplane', 'airplane+1', 'airplane+2', 'quad+1', 'quad+2', 'straight', 'PASS']]
+# PlayType = Optional[Literal['single', 'double', 'triple', 'bomb', 'triple+1', 'triple+2', 'sisters',
+#                             'airplane', 'airplane+1', 'airplane+2', 'quad+1', 'quad+2', 'straight', 'PASS']]
 
 CARD_STR = {
     0: '3',
@@ -32,7 +32,7 @@ class Play:
 
         '''
         self.cards: List[int] = cards
-        self.type: PlayType = None
+        self.type = None
         self.get_info(self.cards)
 
 
