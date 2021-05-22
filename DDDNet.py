@@ -33,7 +33,6 @@ class DDDNet(nn.Module):
         self.fc4 = nn.Linear(512, 1)
 
     def forward(self, s):
-        s = s.unsqueeze(0)
         s = F.relu(self.bn1(self.linear1(s)))                          # batch_size x 256
         s = F.relu(self.bn2(self.linear2(s)))                          # batch_size x 512
         s = F.relu(self.bn3(self.linear3(s)))                          # batch_size x 1024
