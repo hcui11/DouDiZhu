@@ -75,10 +75,12 @@ class MCTS():
         s = self.game.stringRepresentation(canonicalBoard)
 
         if s not in self.Es:
-            self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
+            self.Es[s] = self.game.getGameEnded(canonicalBoard, canonical=True)
         if self.Es[s] != 0:
             # terminal node
-            return -self.Es[s]
+            # if canonicalBoard[57] is 2 then the last player was 1, so you share the same reward
+            # else invert the reward
+            return self.Es[s] if canonicalBoard[-1] == 2 else -self.Es[s]
 
         if s not in self.Ps:
             # leaf node
@@ -99,7 +101,7 @@ class MCTS():
 
             self.Vs[s] = valids
             self.Ns[s] = 0
-            return -v
+            return v if canonicalBoard[-1] == 2 else -v
 
         valids = self.Vs[s]
         cur_best = -float('inf')
@@ -119,7 +121,7 @@ class MCTS():
                     best_act = a
 
         a = best_act
-        next_s, next_player = self.game.getNextState(canonicalBoard, 1, a)
+        next_s, next_player = self.game.getNextState(canonicalBoard, 0, a)
         next_s = self.game.getCanonicalForm(next_s, next_player)
 
         v = self.search(next_s)
@@ -133,4 +135,4 @@ class MCTS():
             self.Nsa[(s, a)] = 1
 
         self.Ns[s] += 1
-        return -v
+        return v if canonicalBoard[-1] == 2 else -v

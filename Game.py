@@ -16,10 +16,14 @@ class Game():
     def __init__(self):
         """
         player: 0 for landlord, 1 or 2 for farmers
+        state representation: 1D np.ndarray where
+            [0:14]: player 0's cards
+            [14:28]: player 1's cards
+            [28:42]: player 2's cards
+            [42:56]: the last move's cards
+            [56]: number of passes this round
+            [57]: current player at [0:14] in canonical board, current player in normal board
         """
-        # self.hands = np.zeros((3, 14), dtype=int)
-        # self.player = 0
-        # self.last_move = None
         with open('action_encoder.pt', 'rb') as f:
             self.encoded_actions = pickle.load(f)
         self.decoded_actions = {i: a for a, i in self.encoded_actions.items()}
@@ -43,7 +47,7 @@ class Game():
 
         last_move = np.zeros((14,))
         hands = hands.flatten()
-        return np.concatenate((hands, last_move))
+        return np.concatenate((hands, last_move, [0, 0]))
 
     def getActionSize(self) -> int:
         """
@@ -52,7 +56,7 @@ class Game():
         """
         return 8542
 
-    def getNextState(self, board, player, action, passes):
+    def getNextState(self, board, player, action):
         """
         Input:
             board: current board
@@ -64,8 +68,8 @@ class Game():
             nextBoard: board after applying action
             nextPlayer: player who plays in the next turn (should be -player)
         """
-        new_board = np.abs(board)
-        new_board[42:] = 0
+        new_board = np.array(board)
+        new_board[42:56] = 0
         action = self.decoded_actions[action]
         
         for card in action:
@@ -73,14 +77,16 @@ class Game():
             new_board[card + 42] += 1
 
         if not action:
-            passes += 1
+            new_board[56] += 1
         else:
-            passes = 0
+            new_board[56] = 0
             
-        if passes == 2:
-            passes = 0
+        if new_board[56] == 2:
+            new_board[56] = 0
+        
+        new_board[57] = (new_board[57] + 1) % 3
 
-        return new_board, (player + 1) % 3, passes
+        return new_board, (player + 1) % 3
 
 
     def getValidMoves(self, board, player):
@@ -94,7 +100,7 @@ class Game():
                         moves that are valid from the current board and player,
                         0 for invalid moves
         """
-        hand = np.abs([board[14 * player: 14 * (player + 1)]])
+        hand = np.array([board[:14]])
         last_move = []
         for i in np.argsort(-board[42:]):
             for _ in range(int(board[42:][i])):
@@ -107,7 +113,7 @@ class Game():
         one_hot[valid_actions] = 1
         return one_hot
 
-    def getGameEnded(self, board, player):
+    def getGameEnded(self, board, canonical=False):
         """
         Input:
             board: current board
@@ -118,18 +124,24 @@ class Game():
                small non-zero value for draw.
 
         """
-        win0 = np.sum(board[:14]) == 0
-        win1 = np.sum(board[14:28]) == 0
-        win2 = np.sum(board[28:42]) == 0
-        if player == 0:
-            if win0:
-                return 1
-            elif win1 or win2:
-                return -1
+        wins = [np.sum(board[:14]) == 0, np.sum(board[14:28]) == 0, np.sum(board[28:42]) == 0]
+        if canonical:
+            landlord = int((3 - board[57]) % 3)
         else:
-            if win1 or win2:
+            landlord = 0
+        farmers = {0, 1, 2} - {landlord}
+
+        if board[57] == landlord:
+            if wins[landlord]:
                 return 1
-            elif win0:
+            for farmer in farmers:
+                if wins[farmer]:
+                    return -1
+        else:
+            for farmer in farmers:
+                if wins[farmer]:
+                    return -1
+            if wins[landlord]:
                 return -1
 
         return 0
@@ -149,23 +161,10 @@ class Game():
                             the colors and return the board.
         """
         # copies board
-        canonical_board = np.abs(board)
-        canonical_board[:42] *= -1
-        canonical_board[14 * player: 14 * (player + 1)] *= -1
+        canonical_board = np.array(board)
+        shifted_hands = np.roll(canonical_board[:42], -14 * player)
+        canonical_board[:42] = shifted_hands
         return canonical_board
-
-    # def getSymmetries(self, board, pi):
-    #     """
-    #     Input:
-    #         board: current board
-    #         pi: policy vector of size self.getActionSize()
-
-    #     Returns:
-    #         symmForms: a list of [(board,pi)] where each tuple is a symmetrical
-    #                    form of the board and the corresponding pi vector. This
-    #                    is used when training the neural network from examples.
-    #     """
-    #     pass
 
     def stringRepresentation(self, board):
         """

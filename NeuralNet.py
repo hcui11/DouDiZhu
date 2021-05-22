@@ -1,6 +1,9 @@
 
+import torch
 from DDDNet import DDDNet
 from utils import *
+import numpy as np
+
 
 args = dotdict({
     'lr': 0.001,

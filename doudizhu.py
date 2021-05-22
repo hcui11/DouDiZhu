@@ -177,11 +177,8 @@ class GameState:
         # No Last Move
         if not self.last_move:
             possible_actions.extend(singles)
-            print('Length after singles', len(possible_actions))
             possible_actions.extend(doubles)
-            print('Length after doubles', len(possible_actions))
             possible_actions.extend(triples)
-            print('Length after triples', len(possible_actions))
             for triple in triples:
                 for single in singles[:-1]:
                     if triple[0] != single[0]:
@@ -189,13 +186,11 @@ class GameState:
                 for double in doubles:
                     if triple[0] != double[0]:
                         possible_actions.append(triple + double)
-            print('Length after triples+n', len(possible_actions))
             possible_actions.extend(self.generate_chains(singles, 5, 12))
             possible_actions.extend(self.generate_chains(doubles, 6, 20))
 
             airplanes = self.generate_chains(triples, 6, 18)
             possible_actions.extend(airplanes)
-            print('Length after airplanes', len(possible_actions))
             kickers1 = set([i for i, v in enumerate(self.hands[self.turn]) if v > 0])
             kickers2 = set([i for i, v in enumerate(self.hands[self.turn]) if v > 1])
             for airplane in airplanes:
@@ -209,7 +204,6 @@ class GameState:
                     for combo in combinations(valids2, len(airplane) // 3):
                         possible_actions.append(airplane + list(combo) * 2)
 
-            print('Length after airplanes+n', len(possible_actions))
 
             for q in quads:
                 q_val = q[0]

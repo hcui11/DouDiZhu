@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torchvision import datasets, transforms
 from torch.autograd import Variable
+import numpy as np
 
 class DDDNet(nn.Module):
     def __init__(self, game, args):
@@ -12,7 +12,7 @@ class DDDNet(nn.Module):
         self.action_size = game.getActionSize()
         self.args = args
 
-        self.linear1 = nn.Linear(56, 256)
+        self.linear1 = nn.Linear(58, 256)
         self.linear2 = nn.Linear(256, 512)
         self.linear3 = nn.Linear(512, 1024)
         self.linear4 = nn.Linear(1024, 2048)
@@ -33,6 +33,7 @@ class DDDNet(nn.Module):
         self.fc4 = nn.Linear(512, 1)
 
     def forward(self, s):
+        s = s.unsqueeze(0)
         s = F.relu(self.bn1(self.linear1(s)))                          # batch_size x 256
         s = F.relu(self.bn2(self.linear2(s)))                          # batch_size x 512
         s = F.relu(self.bn3(self.linear3(s)))                          # batch_size x 1024
