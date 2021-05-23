@@ -318,6 +318,29 @@ class GameState:
         self.turn = (self.turn + 1) % 3
 
 
+    def get_player_state(self, player: int) -> np.ndarray:
+        """
+        Gets the state vector from one player's point of view.
+        Format:
+            [0:14]: player_hand, where player_hand[i] is the number of copies of card i the player has in hand
+            [14:28]: the cards of the last played move, in the same format as player_hand
+            [28]: the hand size of the first other player
+            [29]: the hand size of the second other player
+            [30]: the current player id
+            [31]: the number of passes so far this round
+        """
+        player_hand = self.hands[player]
+        mask = np.ones(self.hands.shape, dtype=bool)
+        mask[player] = False
+        other_hands = self.hands[mask]
+        assert len(other_hands) == 28
+        other_hand_size_1 = np.sum(other_hands[:14])
+        other_hand_size_2 = np.sum(other_hands[14:])
+
+        result = np.concatenate((player_hand, self.last_move.cards, [other_hand_size_1, other_hand_size_2, player, self.passes]))
+        return result
+
+
     def simulate(self, play):
         hands = self.hands + 0
         if play.cards:
