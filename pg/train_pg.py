@@ -5,8 +5,9 @@ from pg import PGAgent
 import torch
 from tqdm import trange
 import random
-from greedy import NaiveGreedy, RandomPlayer
+from greedy import NaiveGreedy, RandomPlayer, SmartGreedy
 from visdom import Visdom
+import sys
 
 #random.seed(0)
 
@@ -251,15 +252,39 @@ if __name__ == '__main__':
 
     vis = Visdom()
 
-    agent = PGAgent(learning_rate=0.01, device='cpu')
-    #load_model(agent.model, "PG_param.pth")
-    p0 = NaiveGreedy()
-    p1 = NaiveGreedy()
-    p2 = NaiveGreedy()
+    agent = PGAgent(learning_rate=0.00001, device='cpu')
+    load_model(agent.model, "PG_param.pth")
+    Naive = NaiveGreedy()
+    Random = RandomPlayer()
+    Smart = SmartGreedy()
+
+    bots = [agent, Naive, Random, Smart]
+    total = [0,0,0,0]
+    wins = [0,0,0,0]
+    total_games = 500
+
+    for i in range(total_games):
+        indices = [random.randint(0,3) for i in range(3)]
+        players = [bots[i] for i in indices]
+        wins[indices[start_game(players, info = False)]] += 1
+        for i in indices:
+            total[i] += 1
+    print([wins[i]/total[i] for i in range(len(wins))])
+    print(wins, total)
+    sys.exit()
+    players = [agent, Smart, Smart]
+    players = [agent, Naive, Naive]
+    wins = [0,0,0]
+    start_game(players, info = False)
+    for i in range(200):
+        wins[start_game(players, info = False)] += 1
+    print(wins)
+
+
     # p0 = RandomPlayer()
     # p1 = RandomPlayer()
     # p2 = RandomPlayer()
-    epochs = 10
+    epochs = 2000
     epoch_per_eval = 100
 
     win_ratio_ls = []
@@ -269,7 +294,7 @@ if __name__ == '__main__':
         learning_pool(agent, epoch_per_eval)
         #main(agent)
 
-        players = [agent, p1, p2]
+        players = [agent, Naive, Naive]
         #players = [p1, agent, agent]
         #players = [p0, p1, p2]
         #pg_vs_mcts(agent)
@@ -287,7 +312,7 @@ if __name__ == '__main__':
     save_model(agent.model, "PG_param.pth")
 
     # %%
-    players = [agent, p1, p2]
+    players = [agent, Naive, Naive]
     #players = [p1, agent, agent]
     #players = [p0, p1, p2]
     #pg_vs_mcts(agent)

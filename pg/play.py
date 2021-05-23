@@ -2,7 +2,6 @@ import numpy as np
 from doudizhu import Game, Play
 from mcts import MonteCarloTreeSearchNode
 
-
 def main():
     game = Game()
     state = Game(hands=game.hands+0)
