@@ -9,7 +9,6 @@ class PG(nn.Module):
         self.linear1 = nn.Linear(58, 32)
         self.linear2 = nn.Linear(32, 1)
 
-
         self.relu = nn.ReLU()
 
     def forward(self, x):

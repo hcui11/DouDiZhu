@@ -1,13 +1,13 @@
 import numpy as np
-from doudizhu import Game, Play
+from doudizhu import Game, Play, CARD_STR
 from mcts import MonteCarloTreeSearchNode
 from pg import PGAgent
 import torch
 from tqdm import trange
 import random
-from greedy import NaiveGreedy, RandomPlayer, SmartGreedy
+from greedy import NaiveGreedy, RandomPlayer
 from visdom import Visdom
-import sys
+from copy import deepcopy
 
 #random.seed(0)
 
@@ -110,8 +110,6 @@ def start_game(players, info=False):
         last_deal = [] if last_move is None else last_move.cards
         possible_moves = game.legal_actions()
         played_cards = game.played_cards
-        # last_move_player = game.last_move_player
-        # last_move_player = [int(last_move == i) for i in range(3)]
         is_last_deal_landlord = int(game.last_move == 0)
         is_landlord = int(game.turn == 0)
 
@@ -126,14 +124,15 @@ def start_game(players, info=False):
         print(f"Player {game.get_winner()} wins!")
     return game.get_winner()
 
-def pg_vs_mcts(pg_agent):
+def vs_mcts(agent, info=False):
     game = Game()
     state1 = Game(hands=game.hands+0)
     state2 = Game(hands=game.hands+0)
     mcts_agent1 = MonteCarloTreeSearchNode(state1, 1)
     mcts_agent2 = MonteCarloTreeSearchNode(state2, 2)
     mcts = [mcts_agent1, mcts_agent2]
-    print('Game Start')
+    if info:
+        print('Game Start')
     while game.get_winner() == -1:
         if game.turn == 0:
 
@@ -142,26 +141,34 @@ def pg_vs_mcts(pg_agent):
             last_move = game.last_move
             last_deal = [] if last_move is None else last_move.cards
             possible_moves = game.legal_actions()
+            played_cards = game.played_cards
+            is_last_deal_landlord = int(game.last_move == 0)
+            is_landlord = int(game.turn == 0)
 
-            agent.current_state(hands, last_deal, possible_moves)
-            action = agent.deal_no_grad()
+            agent.current_state(hands, last_deal, possible_moves, played_cards, is_landlord, is_last_deal_landlord)
+            action = agent.play()
             play = Play(action)
-            print('player 0:', action)
+            if info:
+                print('player 0:', ' '.join([CARD_STR[a] for a in action]))
             game.move(play)
 
             mcts[0] = landlordAI_move(mcts[0], game, action)
             mcts[1] = landlordAI_move(mcts[1], game, action)
         else:
-            mcts_agent = mcts[game.turn - 1]
+            mcts_id = game.turn - 1
+            mcts_agent = mcts[mcts_id]
             mcts_agent = mcts_agent.best_action()
             mcts_agent.parent = None
             move = mcts_agent.parent_action
-            mcts[game.turn-1] = mcts_agent
-            mcts[0] = landlordAI_move(mcts[0], game, move)
-            mcts[1] = landlordAI_move(mcts[1], game, move)
-            print(f'player {game.turn}:', move)
+            mcts[mcts_id] = mcts_agent
             game.move(move)
-    print(f"Player {game.get_winner()} wins!")
+            mcts[1 - mcts_id] = landlordAI_move(mcts[1 - mcts_id], game, move)
+            #mcts[1] = landlordAI_move(mcts[1], game, move)
+            if info:
+                print(f'player {mcts_id + 1}:', move)
+    if info:
+        print(f"Player {game.get_winner()} wins!")
+    return game.get_winner()
 
 def landlordAI_move(landlordAI, game, move):
     try:
@@ -246,55 +253,39 @@ def load_model(model, path):
     model.load_state_dict(torch.load(model_loading_path))
     model.train()
 
+def virtual_game(agent, total_game=10000):
 
+    counter = np.array([0, 0, 0])
+    for _ in trange(total_game):
+        counter[vs_mcts(agent)] += 1
+    counter = counter / total_game
+    print(counter)
 
 if __name__ == '__main__':
 
     vis = Visdom()
 
-    agent = PGAgent(learning_rate=0.00001, device='cpu')
-    load_model(agent.model, "PG_param.pth")
-    Naive = NaiveGreedy()
-    Random = RandomPlayer()
-    Smart = SmartGreedy()
+    agent = PGAgent(learning_rate=0.01, device='cpu')
 
-    bots = [agent, Naive, Random, Smart]
-    total = [0,0,0,0]
-    wins = [0,0,0,0]
-    total_games = 500
-
-    for i in range(total_games):
-        indices = [random.randint(0,3) for i in range(3)]
-        players = [bots[i] for i in indices]
-        wins[indices[start_game(players, info = False)]] += 1
-        for i in indices:
-            total[i] += 1
-    print([wins[i]/total[i] for i in range(len(wins))])
-    print(wins, total)
-    sys.exit()
-    players = [agent, Smart, Smart]
-    players = [agent, Naive, Naive]
-    wins = [0,0,0]
-    start_game(players, info = False)
-    for i in range(200):
-        wins[start_game(players, info = False)] += 1
-    print(wins)
-
-
+    #load_model(agent.model, "PG_param.pth")
+    p0 = NaiveGreedy()
+    p1 = NaiveGreedy()
+    p2 = NaiveGreedy()
     # p0 = RandomPlayer()
     # p1 = RandomPlayer()
     # p2 = RandomPlayer()
-    epochs = 2000
+    epochs = 10000
     epoch_per_eval = 100
 
     win_ratio_ls = []
     epoch_ls = []
+    max_win_ratio = -1
     for i in range(epochs//epoch_per_eval):
 
         learning_pool(agent, epoch_per_eval)
         #main(agent)
 
-        players = [agent, Naive, Naive]
+        players = [agent, p1, p2]
         #players = [p1, agent, agent]
         #players = [p0, p1, p2]
         #pg_vs_mcts(agent)
@@ -309,10 +300,16 @@ if __name__ == '__main__':
         epoch_ls.append((i + 1) * epoch_per_eval)
         win_ratio_ls.append(counter[0])
         vis.line(X=epoch_ls, Y=win_ratio_ls, win='learning curve')
-    save_model(agent.model, "PG_param.pth")
+
+
+        if counter[0] > max_win_ratio:
+            max_win_ratio = counter[0]
+            best_agent = deepcopy(agent)
+
+    # save_model(agent.model, "PG_param.pth")
 
     # %%
-    players = [agent, Naive, Naive]
+    players = [best_agent, p1, p2]
     #players = [p1, agent, agent]
     #players = [p0, p1, p2]
     #pg_vs_mcts(agent)
