@@ -336,9 +336,13 @@ class GameState:
         assert len(other_hands) == 28
         other_hand_size_1 = np.sum(other_hands[:14])
         other_hand_size_2 = np.sum(other_hands[14:])
-        last_move_cards = self.last_move.cards if self.last_move else np.zeros((14), dtype=int)
 
-        result = np.concatenate((player_hand, last_move_cards, [other_hand_size_1, other_hand_size_2, player, self.passes]))
+        last_move_vec = np.zeros((14), dtype=int)
+        if self.last_move:
+            for card in self.last_move.cards:
+                last_move_vec[card] += 1
+
+        result = np.concatenate((player_hand, last_move_vec, [other_hand_size_1, other_hand_size_2, player, self.passes]))
         return result
 
 
