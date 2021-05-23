@@ -32,6 +32,7 @@ class PGAgent():
         self.model = PG().to(self.device)
         #self.optimizer = optim.SGD(self.model.parameters(), lr=learning_rate)
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+        self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=3000, gamma=0.1)
 
     def current_state(self, hands, last_deal, legal_actions, played_cards, is_landlord, is_last_deal_landlord):
         """

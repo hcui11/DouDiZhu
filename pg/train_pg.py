@@ -98,6 +98,7 @@ def learning_pool(agent, epochs):
         agent.optimizer.zero_grad()
         loss.backward()
         agent.optimizer.step()
+        agent.scheduler.step()
 
         tr.set_description("loss = %.5f"%loss.item())
 
@@ -265,7 +266,7 @@ if __name__ == '__main__':
 
     vis = Visdom()
 
-    agent = PGAgent(learning_rate=0.01, device='cpu')
+    agent = PGAgent(learning_rate=0.1, device='cpu')
 
     #load_model(agent.model, "PG_param.pth")
     p0 = NaiveGreedy()
@@ -285,36 +286,48 @@ if __name__ == '__main__':
         learning_pool(agent, epoch_per_eval)
         #main(agent)
 
-        players = [agent, p1, p2]
-        #players = [p1, agent, agent]
-        #players = [p0, p1, p2]
-        #pg_vs_mcts(agent)
-
         total_game = 100
+
+        # eval being landlord
+        players = [agent, p1, p2]
+
+
         counter = np.array([0, 0, 0])
-        for _ in range(total_game):
+        for _ in range(total_game // 2):
             counter[start_game(players)] += 1
-        counter = counter / total_game
-        #print(counter)
+
+        performance = counter[0]
+
+        # eval being farmer
+        players = [p0, agent, agent]
+        counter = np.array([0, 0, 0])
+        for _ in range(total_game // 2):
+            counter[start_game(players)] += 1
+
+        performance += counter[1] + counter[2]
+        performance /= total_game
+
 
         epoch_ls.append((i + 1) * epoch_per_eval)
-        win_ratio_ls.append(counter[0])
+        win_ratio_ls.append(performance)
         vis.line(X=epoch_ls, Y=win_ratio_ls, win='learning curve')
 
-
-        if counter[0] > max_win_ratio:
-            max_win_ratio = counter[0]
+        if performance > max_win_ratio:
+            max_win_ratio = performance
             best_agent = deepcopy(agent)
+
+
+
 
     # save_model(agent.model, "PG_param.pth")
 
     # %%
     players = [best_agent, p1, p2]
-    #players = [p1, agent, agent]
+    #players = [p1, best_agent, best_agent]
     #players = [p0, p1, p2]
     #pg_vs_mcts(agent)
 
-    total_game = 1000
+    total_game = 10000
     counter = np.array([0, 0, 0])
     for _ in range(total_game):
         counter[start_game(players)] += 1
