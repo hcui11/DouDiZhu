@@ -234,18 +234,32 @@ def main(agent):
         print("\n\n")
     print(f"Player {game.get_winner()} wins!")
 
+def save_model(model, path):
+    model_saving_path = path
+    print('saving model to ' + model_saving_path)
+    torch.save(model.state_dict(), model_saving_path)
+
+def load_model(model, path):
+    model_loading_path = path
+    print('loading model from ' + model_loading_path)
+    model.load_state_dict(torch.load(model_loading_path))
+    model.train()
+
+
+
 if __name__ == '__main__':
 
     vis = Visdom()
 
     agent = PGAgent(learning_rate=0.01, device='cpu')
+    #load_model(agent.model, "PG_param.pth")
     p0 = NaiveGreedy()
     p1 = NaiveGreedy()
     p2 = NaiveGreedy()
     # p0 = RandomPlayer()
     # p1 = RandomPlayer()
     # p2 = RandomPlayer()
-    epochs = 10000
+    epochs = 10
     epoch_per_eval = 100
 
     win_ratio_ls = []
@@ -256,7 +270,6 @@ if __name__ == '__main__':
         #main(agent)
 
         players = [agent, p1, p2]
-        #players = [agent, p1, p2]
         #players = [p1, agent, agent]
         #players = [p0, p1, p2]
         #pg_vs_mcts(agent)
@@ -271,11 +284,11 @@ if __name__ == '__main__':
         epoch_ls.append((i + 1) * epoch_per_eval)
         win_ratio_ls.append(counter[0])
         vis.line(X=epoch_ls, Y=win_ratio_ls, win='learning curve')
-
+    save_model(agent.model, "PG_param.pth")
 
     # %%
-    #players = [agent, p1, p2]
-    players = [p1, agent, agent]
+    players = [agent, p1, p2]
+    #players = [p1, agent, agent]
     #players = [p0, p1, p2]
     #pg_vs_mcts(agent)
 
