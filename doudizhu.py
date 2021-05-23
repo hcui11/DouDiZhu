@@ -173,7 +173,7 @@ class GameState:
             if n == 4:
                 possible_actions.append([i, i, i, i])
                 quads.append([i, i, i, i])
-                
+
         # print(self.last_move)
         # No Last Move
         if not self.last_move:
@@ -316,6 +316,7 @@ class GameState:
                 self.passes = 0
                 self.last_move = None
         self.turn = (self.turn + 1) % 3
+
 
     def simulate(self, play):
         hands = self.hands + 0

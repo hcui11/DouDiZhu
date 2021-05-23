@@ -3,9 +3,9 @@ import sys
 
 # import coloredlogs
 
-from Coach import Coach
-from Game import Game
-from NeuralNet import NeuralNet as nn
+from alpha_zero.Coach import Coach
+from alpha_zero.Game import Game
+from alpha_zero.NeuralNet import NeuralNet as nn
 from utils import *
 
 log = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ def main():
         log.info("Loading 'trainExamples' from file...")
         c.loadTrainExamples()
 
-    log.info('Starting the learning process 🎉')
+    log.info('Starting the learning process!')
     c.learn()
 
 

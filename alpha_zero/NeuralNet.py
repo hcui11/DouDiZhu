@@ -3,7 +3,7 @@ import os
 import torch
 import torch.optim as optim
 
-from DDDNet import DDDNet
+from .DDDNet import DDDNet
 from tqdm import tqdm
 from utils import *
 
