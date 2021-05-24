@@ -1,8 +1,11 @@
-import random
 import numpy as np
-from typing import Optional, List
+
 from random import shuffle
+from typing import Optional, List
 from itertools import combinations
+
+# PlayType = Optional[Literal['single', 'double', 'triple', 'bomb', 'triple+1', 'triple+2', 'sisters',
+#                             'airplane', 'airplane+1', 'airplane+2', 'quad+1', 'quad+2', 'straight', 'PASS']]
 
 CARD_STR = {
     0: '3',
@@ -38,6 +41,12 @@ class Play:
         for card in self.cards:
             s += CARD_STR[card] + ' '
         return s
+
+    def to_onehot(self):
+        ans = [0] * 14
+        for i in range(len(self.cards)):
+            ans[self.cards[i]] += 1
+        return ans
 
 
     def get_info(self, cards: List[int]):
@@ -86,7 +95,9 @@ class Play:
         else:
             self.type = 'straight'
 
-class Game:
+        # TOTAL NUMBER OF POSSIBLE MOVES: 8542
+
+class GameState:
     def __init__(self,
                  hands: Optional[np.array] = None,
                  last_move: Optional[Play] = None,
@@ -104,7 +115,6 @@ class Game:
         self.passes = passes
         self.played_cards = [0 for _ in range(14)]
         self.last_move_player = -1
-
         if hands is None:
             self.hands = np.zeros((3, 14), dtype=int)
             self.distribute_cards()
@@ -304,18 +314,43 @@ class Game:
     def move(self, play):
         if play.cards:
             self.last_move = play
-            self.last_move_player = self.turn
             for card in play.cards:
                 self.hands[self.turn, card] -= 1
-                self.played_cards[card] += 1
             self.passes = 0
         else:
             self.passes += 1
             if self.passes == 2:
                 self.passes = 0
                 self.last_move = None
-                self.last_move_player = -1
         self.turn = (self.turn + 1) % 3
+
+
+    def get_player_state(self, player: int) -> np.ndarray:
+        """
+        Gets the state vector from one player's point of view.
+        Format:
+            [0:14]: player_hand, where player_hand[i] is the number of copies of card i the player has in hand
+            [14:28]: the cards of the last played move, in the same format as player_hand
+            [28]: the hand size of the first other player
+            [29]: the hand size of the second other player
+            [30]: the current player id
+            [31]: the number of passes so far this round
+        """
+
+        player_hand = self.hands[player]
+        mask = np.ones(self.hands.shape, dtype=bool)
+        mask[player] = False
+        other_hands = self.hands[mask]
+        assert len(other_hands) == 28
+        other_hand_size_1 = np.sum(other_hands[:14])
+        other_hand_size_2 = np.sum(other_hands[14:])
+        
+        if self.last_move == None:
+            result = np.concatenate((player_hand, np.zeros(14), [other_hand_size_1, other_hand_size_2, player, self.passes]))
+        else:
+            result = np.concatenate((player_hand, self.last_move.to_onehot(), [other_hand_size_1, other_hand_size_2, player, self.passes]))
+        return result
+
 
     def simulate(self, play):
         hands = self.hands + 0

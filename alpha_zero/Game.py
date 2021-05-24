@@ -1,5 +1,7 @@
 import numpy as np
 from random import shuffle
+#import sys, os
+#sys.path.append(os.path.abspath(os.path.join('..')))
 from doudizhu import GameState, Play
 import pickle
 
@@ -24,7 +26,7 @@ class Game():
             [56]: number of passes this round
             [57]: current player at [0:14] in canonical board, current player in normal board
         """
-        with open('action_encoder.pt', 'rb') as f:
+        with open('../action_encoder.pt', 'rb') as f:
             self.encoded_actions = pickle.load(f)
         self.decoded_actions = {i: a for a, i in self.encoded_actions.items()}
 
@@ -71,7 +73,7 @@ class Game():
         new_board = np.array(board)
         new_board[42:56] = 0
         action = self.decoded_actions[action]
-        
+
         for card in action:
             new_board[card + 14 * player] -= 1
             new_board[card + 42] += 1
@@ -80,10 +82,10 @@ class Game():
             new_board[56] += 1
         else:
             new_board[56] = 0
-            
+
         if new_board[56] == 2:
             new_board[56] = 0
-        
+
         new_board[57] = (new_board[57] + 1) % 3
 
         return new_board, (player + 1) % 3

@@ -6,7 +6,7 @@ Created on Sat May 22 15:12:42 2021
 """
 
 import numpy as np
-from doudizhu import Game, Play
+from doudizhu import GameState, Play
 
 class NaiveGreedy():
     def __init__(self):

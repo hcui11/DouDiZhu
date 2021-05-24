@@ -1,13 +1,20 @@
 import numpy as np
-from doudizhu import Game, Play, CARD_STR
+from doudizhu import GameState, Play, CARD_STR
+#from ..alpha_zero.Game import Game
 from mcts import MonteCarloTreeSearchNode
 from pg import PGAgent
+from supervised import Supervised
 import torch
 from tqdm import trange
 import random
-from greedy import NaiveGreedy, RandomPlayer
+from greedy import NaiveGreedy, RandomPlayer, SmartGreedy
 from visdom import Visdom
 from copy import deepcopy
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.join('..', 'alpha_zero')))
+from Game import Game
 
 #random.seed(0)
 
@@ -103,7 +110,7 @@ def learning_pool(agent, epochs):
         tr.set_description("loss = %.5f"%loss.item())
 
 def start_game(players, info=False):
-    game = Game()
+    game = GameState()
     while game.get_winner() == -1:
         player = game.turn
         hands = game.hands[player]
@@ -268,10 +275,33 @@ if __name__ == '__main__':
 
     agent = PGAgent(learning_rate=0.1, device='cpu')
 
-    #load_model(agent.model, "PG_param.pth")
+    load_model(agent.model, "PG_param.pth")
     p0 = NaiveGreedy()
     p1 = NaiveGreedy()
     p2 = NaiveGreedy()
+
+
+    G = Game()
+    print(G.decoded_actions)
+    agent2 = Supervised(G)
+
+    sys.exit()
+
+
+
+
+    Naive = NaiveGreedy()
+    Smart = SmartGreedy()
+    players = [agent, Smart, Smart]
+    #players = [Smart, agent, agent]
+    #players = [agent, Naive, Naive]
+    #players = [Naive, agent, agent]
+    wins = [0,0,0]
+    for i in range(500):
+        wins[start_game(players)] += 1
+
+    print([i/500 for i in wins])
+    sys.exit()
     # p0 = RandomPlayer()
     # p1 = RandomPlayer()
     # p2 = RandomPlayer()
