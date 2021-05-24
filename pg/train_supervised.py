@@ -8,7 +8,7 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 import torch.nn.functional as F
-
+import matplotlib.pyplot as plt
 
 from tqdm import trange
 import random
@@ -94,39 +94,47 @@ if __name__ == '__main__':
     Random = RandomPlayer()
     Naive = NaiveGreedy()
     players = [Smart, Smart, Smart]
+    players = [Random, Random, Random]
 
-    for i in range(1000):
-        start_game(players, save_data = True)
+    # for i in range(100):
+    #     start_game(players, save_data = True)
 
     agent = Supervised(G)
-    load_model(agent, "Super_param.pth")
-
-
+    load_model(agent, "Super_param_best.pth")
 
 
     players = [agent, Random, Random]
+    players = [Random, agent, agent]
+    players = [agent, Naive, Naive]
+    players = [Naive, agent, agent]
     # start_game(players, info = True)
     # sys.exit()
-    wins = [0,0,0]
 
+
+    wins = [0,0,0]
+    wr = []
     for i in range(100):
         wins[start_game(players)] += 1
+        #wr.append((wins[0])/(i+1))
+        wr.append((wins[1] + wins[2])/(i+1))
     print(wins)
-    #sys.exit()
+    plt.plot(wr)
+    plt.show()
+    sys.exit()
 
 
     inputs = torch.FloatTensor(inputs)
     target = torch.FloatTensor(target)
     target = F.one_hot(target.to(torch.int64), num_classes = 8542)
-    # for t in target:
-    #     if t[8541] == 0:
-    #          t[:8541] = -100
+
 
     opt = optim.Adam(agent.parameters(), lr=0.001)
     criterion = nn.MSELoss()
+    #criterion = nn.CrossEntropyLoss()
 
-    for epoch in range(30):
+    for epoch in range(15):
         outputs = agent(inputs)
+        print(outputs.shape, target.shape)
         loss = criterion(outputs, target.float())
         #print(loss.dtype)
         loss.backward()

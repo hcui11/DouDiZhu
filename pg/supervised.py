@@ -13,6 +13,7 @@ class Supervised(nn.Module):
         self.linear3 = nn.Linear(256, 512)
         self.linear4 = nn.Linear(512, self.action_size)
         self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         x = self.linear1(x)
@@ -22,7 +23,7 @@ class Supervised(nn.Module):
         x = self.linear3(x)
         x = self.relu(x)
         x = self.linear4(x)
-        return x
+        return self.sigmoid(x)
 
     def play(self, x, possible_move_indices):
         temp = self.forward(x)
