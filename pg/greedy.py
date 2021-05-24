@@ -30,6 +30,17 @@ class SmartGreedy():
         self.play_info = Play(last_deal)
         self.played_cards = played_cards
 
+    def current_state2(self, info, possible_moves):
+        self.hands = info[:14]
+        last_deal = info[14:28]
+        self.last_deal = []
+        for i in range(len(last_deal)):
+            for j in range(last_deal[i]):
+                self.last_deal.append(i)
+        self.play_info = Play(last_deal)
+        self.possible_actions = possible_moves
+
+
     def play(self):
         # print("\n")
         # print(self.hands)
