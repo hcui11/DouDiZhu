@@ -58,7 +58,6 @@ class SmartGreedy():
                     #print([i for j in range(num)])
                     return [i for j in range(num)]
 
-
         for i, action in enumerate(self.possible_actions):
             hand_sum = 0
             for card in action:
@@ -73,11 +72,16 @@ class SmartGreedy():
                 best = num_cards
                 best_arg = i
                 tie_break = (sum - hand_sum)/(hand_size - len(action))
+                if Play(action).type != "bomb": #punishment for using a bomb
+                    tie_break -= 3
             elif self.temp and num_cards == best:
-                if (sum - hand_sum)/(hand_size - len(action)) > tie_break and Play(action).type != "PASS" and Play(action).type != "bomb":
+                new_tiebreak = (sum - hand_sum)/(hand_size - len(action))
+                if Play(action).type != "bomb": #punishment for using a bomb
+                    new_tiebreak -= 3
+                if new_tiebreak > tie_break and Play(action).type != "PASS":
                     #print("comparing", self.possible_actions[best_arg], self.possible_actions[i])
                     best_arg = i
-                    tie_break = (sum - hand_sum)/(hand_size - len(action))
+                    tie_break = new_tiebreak
             for card in action:
                 self.hands[card] += 1
         # print(self.possible_actions[best_arg])

@@ -33,9 +33,9 @@ def main():
 
 
     load_model(agent.model, "PG_param.pth")
-    all_players = ["MonteCarlo", "PGAgent", "Naive", "Random", "Smart", "Player"]
+    all_players = ["MonteCarlo", "PGAgent", "Naive", "Random", "Smart", "Human"]
     #MonteCarlo can only play as landlord
-    players = ["Naive", "PGAgent", "Smart"]
+    players = ["Human", "PGAgent", "Smart"]
 
     while game.get_winner() == -1:
 
@@ -54,11 +54,11 @@ def main():
         else:
             print("There is no play to beat")
 
-        if players[player] == "player":
+        if players[player] == "Human":
             print("Legal Actions:")
             possible_moves = game.legal_actions()
             for i, action in enumerate(possible_moves):
-                print(f'{i}: {action}')
+                print(f'{i}: {indices_to_string(action)}')
 
         while (True):
             if players[player] == "MonteCarlo":
@@ -125,7 +125,7 @@ def main():
                     landlordAI = MonteCarloTreeSearchNode(state, 0)
                 break
         print("\n\n")
-    print(f"Player {game.get_winner()} wins!")
+    print(f"Player {game.get_winner()}, {players[game.get_winner()]} wins!")
 
 
 if __name__ == '__main__':
