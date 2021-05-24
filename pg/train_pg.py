@@ -5,7 +5,7 @@ from pg import PGAgent
 import torch
 from tqdm import trange
 import random
-from greedy import NaiveGreedy, RandomPlayer
+from greedy import NaiveGreedy, RandomPlayer, SmartGreedy
 from visdom import Visdom
 from copy import deepcopy
 
@@ -21,7 +21,7 @@ class GameTransition():
 
 def generate_transitions(agent):
 
-    win_reward = 0
+    win_reward = 1
     no_reward = 0
     lose_reward = -1
 
@@ -52,11 +52,11 @@ def generate_transitions(agent):
                 gt = GameTransition(current_state, score, no_reward, None)
             else:
                 # if landlord wins
-                if game.turn == 0:
+                if game.get_winner() == 0:
                     game_transitions[-1].reward = lose_reward
                     game_transitions[-2].reward = lose_reward
                 # if farmer 1 wins
-                elif game.turn == 1:
+                elif game.get_winner() == 1:
                     game_transitions[-1].reward = lose_reward
                     game_transitions[-2].reward = win_reward
                 # if farmer 2 wins
@@ -88,14 +88,17 @@ def learning_pool(agent, epochs):
     tr = trange(epochs, desc="loss")
     agent.model.train()
     for epoch in tr:
+        agent.optimizer.zero_grad()
+
         game_transitions = generate_transitions(agent)
 
         # train player 0
+
         loss = get_loss(game_transitions[::3])
         loss += get_loss(game_transitions[1::3])
         loss += get_loss(game_transitions[2::3])
         loss = loss.sum()
-        agent.optimizer.zero_grad()
+
         loss.backward()
         agent.optimizer.step()
         agent.scheduler.step()
@@ -215,7 +218,7 @@ def main(agent):
                 possible_moves = game.legal_actions()
 
                 agent.current_state(hands, last_deal, possible_moves)
-                action = agent.deal_no_grad()
+                action = agent.play()
                 print("Agent played", action)
                 input("Press anything to continue")
                 play = Play(action)
@@ -266,15 +269,18 @@ if __name__ == '__main__':
 
     vis = Visdom()
 
-    agent = PGAgent(learning_rate=0.1, device='cpu')
+    agent = PGAgent(learning_rate=0.01, device='cpu')
 
-    #load_model(agent.model, "PG_param.pth")
-    p0 = NaiveGreedy()
-    p1 = NaiveGreedy()
-    p2 = NaiveGreedy()
+    load_model(agent.model, "PG_param.pth")
+    # p0 = NaiveGreedy()
+    # p1 = NaiveGreedy()
+    # p2 = NaiveGreedy()
     # p0 = RandomPlayer()
     # p1 = RandomPlayer()
     # p2 = RandomPlayer()
+    p0 = SmartGreedy()
+    p1 = SmartGreedy()
+    p2 = SmartGreedy()
     epochs = 10000
     epoch_per_eval = 100
 
@@ -293,18 +299,19 @@ if __name__ == '__main__':
 
 
         counter = np.array([0, 0, 0])
-        for _ in range(total_game // 2):
+        for _ in range(total_game//2):
             counter[start_game(players)] += 1
-
         performance = counter[0]
+
 
         # eval being farmer
         players = [p0, agent, agent]
         counter = np.array([0, 0, 0])
-        for _ in range(total_game // 2):
+        for _ in range(total_game//2):
             counter[start_game(players)] += 1
 
         performance += counter[1] + counter[2]
+
         performance /= total_game
 
 
@@ -324,10 +331,11 @@ if __name__ == '__main__':
     # %%
     players = [best_agent, p1, p2]
     #players = [p1, best_agent, best_agent]
+    #players = [best_agent, best_agent, best_agent]
     #players = [p0, p1, p2]
     #pg_vs_mcts(agent)
 
-    total_game = 10000
+    total_game = 1000
     counter = np.array([0, 0, 0])
     for _ in range(total_game):
         counter[start_game(players)] += 1

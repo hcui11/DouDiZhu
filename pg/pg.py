@@ -88,9 +88,9 @@ class PGAgent():
             game_state = self.get_state(hands, last, action, played_cards, is_landlord, is_last_deal_landlord).to(self.device)
             scores[i] = self.model(game_state)
         scores = torch.softmax(scores, dim=0)
-        best_action = np.random.choice(np.arange(0, len(scores), 1), p=scores.cpu().detach().numpy())
-        best_action = self.legal_actions[scores.argmax().item()]
-        return game_state, best_action, scores.max()
+        random_a = np.random.choice(np.arange(0, len(scores), 1), p=scores.cpu().detach().numpy())
+        random_action = self.legal_actions[random_a]
+        return game_state, random_action, scores[random_a]
 
     def deal_no_grad(self):
         self.model.eval()
@@ -99,4 +99,18 @@ class PGAgent():
         return action
 
     def play(self):
-        return self.deal_no_grad()
+        with torch.no_grad():
+            hands = self.hands
+            last = self.cards_to_list(self.last_deal)
+            scores = torch.zeros(len(self.legal_actions))
+            played_cards = self.played_cards
+            is_landlord = self.is_landlord
+            is_last_deal_landlord = self.is_last_deal_landlord
+
+            for i, action in enumerate(self.legal_actions):
+                action = self.cards_to_list(action)
+                game_state = self.get_state(hands, last, action, played_cards, is_landlord, is_last_deal_landlord).to(self.device)
+                scores[i] = self.model(game_state)
+            scores = torch.softmax(scores, dim=0)
+            best_action = self.legal_actions[scores.argmax().item()]
+            return best_action

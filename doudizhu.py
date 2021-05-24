@@ -1,7 +1,7 @@
 import numpy as np
 
 from random import shuffle
-from typing import Optional, List
+from typing import Optional, List, Iterable
 from itertools import combinations
 
 # PlayType = Optional[Literal['single', 'double', 'triple', 'bomb', 'triple+1', 'triple+2', 'sisters',
@@ -25,13 +25,13 @@ CARD_STR = {
 }
 
 class Play:
-    def __init__(self, cards: List[int]):
+    def __init__(self, cards: Iterable[int]):
         '''
         cards: the cards in play in the current round, as a list of integers
         type: the type of play in the current round, as a string
 
         '''
-        self.cards: List[int] = cards
+        self.cards: List[int] = list(cards)
         self.type = None
         self.get_info(self.cards)
 
@@ -337,7 +337,12 @@ class GameState:
         other_hand_size_1 = np.sum(other_hands[:14])
         other_hand_size_2 = np.sum(other_hands[14:])
 
-        result = np.concatenate((player_hand, self.last_move.cards, [other_hand_size_1, other_hand_size_2, player, self.passes]))
+        last_move_vec = np.zeros((14), dtype=int)
+        if self.last_move:
+            for card in self.last_move.cards:
+                last_move_vec[card] += 1
+
+        result = np.concatenate((player_hand, last_move_vec, [other_hand_size_1, other_hand_size_2, player, self.passes]))
         return result
 
 
