@@ -8,6 +8,7 @@ import random
 from greedy import NaiveGreedy, RandomPlayer, SmartGreedy
 from visdom import Visdom
 from copy import deepcopy
+import sys
 
 #random.seed(0)
 
@@ -272,18 +273,27 @@ if __name__ == '__main__':
     agent = PGAgent(learning_rate=0.01, device='cpu')
 
     load_model(agent.model, "PG_param.pth")
-    # p0 = NaiveGreedy()
-    # p1 = NaiveGreedy()
-    # p2 = NaiveGreedy()
-    # p0 = RandomPlayer()
-    # p1 = RandomPlayer()
-    # p2 = RandomPlayer()
-    p0 = SmartGreedy()
-    p1 = SmartGreedy()
-    p2 = SmartGreedy()
+    Naive = NaiveGreedy()
+    Random = RandomPlayer()
+    Smart = SmartGreedy()
     epochs = 10000
     epoch_per_eval = 100
 
+
+    players = [agent, Naive, Naive]
+    #players = [p1, best_agent, best_agent]
+    #players = [best_agent, best_agent, best_agent]
+    #players = [p0, p1, p2]
+    #pg_vs_mcts(agent)
+    
+    total_game = 100
+    counter = np.array([0, 0, 0])
+    for _ in range(total_game):
+        counter[start_game(players)] += 1
+    counter = counter / total_game
+    print(counter)
+
+    sys.exit()
     win_ratio_ls = []
     epoch_ls = []
     max_win_ratio = -1
