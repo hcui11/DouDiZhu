@@ -1,20 +1,47 @@
 import numpy as np
-from doudizhu import Game, Play
+from doudizhu import Game, Play, CARD_STR
 from mcts import MonteCarloTreeSearchNode
 from pg import PGAgent
 from train_pg import *
 
+def hand_to_string(cards): #14-vector format to list of card strings
 
+    str = '['
+    for index, num in enumerate(cards):
+        for i in range(num):
+            str += CARD_STR[index] + ", "
+    str = str[:-2]
+    str += "]"
+    return str
+def indices_to_string(cards): #list of indices to list of card strings
+    if cards == []:
+        return '[ ]'
+    str = '['
+    for index in cards:
+        str += CARD_STR[index] + ", "
+    str = str[:-2]
+    str += "]"
+    return str
 def main():
     game = Game()
     state = Game(hands=game.hands+0)
     landlordAI = MonteCarloTreeSearchNode(state, 0)
     agent = PGAgent(learning_rate=0.01, device='cpu')
+    Naive = NaiveGreedy()
+    Random = RandomPlayer()
+    Smart = SmartGreedy()
+
+
     load_model(agent.model, "PG_param.pth")
+    all_players = ["MonteCarlo", "PGAgent", "Naive", "Random", "Smart", "Player"]
+    #MonteCarlo can only play as landlord
+    players = ["Naive", "PGAgent", "Smart"]
 
     while game.get_winner() == -1:
+
+        player = game.turn
         print(f"PLAYER {game.turn}'s CARDS:")
-        print(game.hands[game.turn])
+        print(hand_to_string(game.hands[game.turn]))
 
         print("Your opponents hand sizes: ", end="")
         for i in range(3):
@@ -23,25 +50,25 @@ def main():
         print()
 
         if game.last_move != None:
-            print("The play to beat: ", game.last_move.cards)
+            print("The play to beat: ", indices_to_string(game.last_move.cards))
         else:
             print("There is no play to beat")
 
-        print("Legal Actions:")
-        possible_moves = game.legal_actions()
-        for i, action in enumerate(possible_moves[:-1]):
-            print(f'{i}: {action}')
+        if players[player] == "player":
+            print("Legal Actions:")
+            possible_moves = game.legal_actions()
+            for i, action in enumerate(possible_moves):
+                print(f'{i}: {action}')
 
         while (True):
-            # if game.turn == 0:
-            #     landlordAI = landlordAI.best_action()
-            #     landlordAI.parent = None
-            #     print(f"Landlord played a {landlordAI.parent_action.type}!")
-            #     input("Press anything to continue")
-            #     print(type(landlordAI.parent_action))
-            #     game.move(landlordAI.parent_action)
-            #     break
-            if game.turn == 0:
+            if players[player] == "MonteCarlo":
+                landlordAI = landlordAI.best_action()
+                landlordAI.parent = None
+                print(f"MonteCarlo played {indices_to_string(landlordAI.parent_action.cards)}!")
+                input("Press anything to continue")
+                game.move(landlordAI.parent_action)
+                break
+            elif players[player] == "PGAgent" or players[player] == "Smart" or players[player] == "Naive" or players[player] == "Random":
                 player = game.turn
                 hands = game.hands[player]
                 last_move = game.last_move
@@ -50,9 +77,23 @@ def main():
                 played_cards = game.played_cards
                 is_last_deal_landlord = int(game.last_move == 0)
                 is_landlord = int(game.turn == 0)
-                agent.current_state(hands, last_deal, possible_moves, played_cards, is_landlord, is_last_deal_landlord)
-                action = Play(agent.play())
-                print(f"Landlord played a {action.type}!")
+                if players[player] == "PGAgent":
+                    agent.current_state(hands, last_deal, possible_moves, played_cards, is_landlord, is_last_deal_landlord)
+                    action = Play(agent.play())
+                    print(f"PGAgent played {indices_to_string(action.cards)}!")
+                elif players[player] == "Smart":
+                    Smart.current_state(hands, last_deal, possible_moves, played_cards, is_landlord, is_last_deal_landlord)
+                    action = Play(Smart.play())
+                    print(f"Smart Greedy played {indices_to_string(action.cards)}!")
+                elif players[player] == "Naive":
+                    Naive.current_state(hands, last_deal, possible_moves, played_cards, is_landlord, is_last_deal_landlord)
+                    action = Play(Naive.play())
+                    print(f"Naive Greedy played {indices_to_string(action.cards)}!")
+                elif players[player] == "Random":
+                    Random.current_state(hands, last_deal, possible_moves, played_cards, is_landlord, is_last_deal_landlord)
+                    action = Play(Random.play())
+                    print(f"Random played {indices_to_string(action.cards)}!")
+
                 input("Press anything to continue")
                 game.move(action)
                 break
